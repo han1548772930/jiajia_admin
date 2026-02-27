@@ -47,6 +47,9 @@ const Checkbox = defineAsyncComponent(
 const CheckboxGroup = defineAsyncComponent(
   () => import('antdv-next/dist/checkbox/Group'),
 );
+const ColorPicker = defineAsyncComponent(
+  () => import('antdv-next/dist/color-picker/index'),
+);
 const DatePicker = defineAsyncComponent(
   () => import('antdv-next/dist/date-picker/index'),
 );
@@ -75,6 +78,12 @@ const RangePicker = defineAsyncComponent(() =>
 const Rate = defineAsyncComponent(() => import('antdv-next/dist/rate/index'));
 const Select = defineAsyncComponent(
   () => import('antdv-next/dist/select/index'),
+);
+const Segmented = defineAsyncComponent(
+  () => import('antdv-next/dist/segmented/index'),
+);
+const Slider = defineAsyncComponent(
+  () => import('antdv-next/dist/slider/index'),
 );
 const Space = defineAsyncComponent(() => import('antdv-next/dist/space/index'));
 const Switch = defineAsyncComponent(
@@ -499,6 +508,7 @@ export type ComponentType =
   | 'Cascader'
   | 'Checkbox'
   | 'CheckboxGroup'
+  | 'ColorPicker'
   | 'DatePicker'
   | 'DefaultButton'
   | 'Divider'
@@ -512,7 +522,9 @@ export type ComponentType =
   | 'RadioGroup'
   | 'RangePicker'
   | 'Rate'
+  | 'Segmented'
   | 'Select'
+  | 'Slider'
   | 'Space'
   | 'Switch'
   | 'Textarea'
@@ -552,6 +564,7 @@ async function initComponentAdapter() {
     Cascader,
     Checkbox,
     CheckboxGroup,
+    ColorPicker,
     DatePicker,
     // 自定义默认按钮
     DefaultButton: (props, { attrs, slots }) => {
@@ -575,7 +588,9 @@ async function initComponentAdapter() {
     RadioGroup,
     RangePicker,
     Rate,
+    Segmented,
     Select: withDefaultPlaceholder(Select, 'select'),
+    Slider,
     Space,
     Switch,
     Textarea: withDefaultPlaceholder(Textarea, 'input'),

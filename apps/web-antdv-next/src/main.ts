@@ -1,7 +1,8 @@
 import { initPreferences } from '@vben/preferences';
 import { unmountGlobalLoading } from '@vben/utils';
-
+import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import { overridesPreferences } from './preferences';
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 
 /**
  * 应用初始化完成之后再进行页面加载渲染
@@ -12,6 +13,11 @@ async function initApplication() {
   const env = import.meta.env.PROD ? 'prod' : 'dev';
   const appVersion = import.meta.env.VITE_APP_VERSION;
   const namespace = `${import.meta.env.VITE_APP_NAMESPACE}-${appVersion}-${env}`;
+
+
+  // Register all Community features
+  ModuleRegistry.registerModules([AllCommunityModule, AllEnterpriseModule]);
+
 
   // app偏好设置初始化
   await initPreferences({

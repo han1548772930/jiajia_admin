@@ -10,7 +10,7 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { notification } from 'antdv-next';
 import { defineStore } from 'pinia';
 
-import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi } from '#/api';
+import { getAccessCodesApi, getUserInfoApi, loginApi } from '#/api';
 import { $t } from '#/locales';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       loginLoading.value = true;
       const { accessToken } = await loginApi(params);
-
+      // const accessToken="NmcSoft"
       // 如果成功获取到 accessToken
       if (accessToken) {
         accessStore.setAccessToken(accessToken);
@@ -79,7 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout(redirect: boolean = true) {
     try {
-      await logoutApi();
+      // await logoutApi();
     } catch {
       // 不做任何处理
     }

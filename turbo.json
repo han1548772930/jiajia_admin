@@ -27,6 +27,14 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "build:antdv-next:admin": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "build:antdv-next:workflow": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
     "build:analyze": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]

@@ -4,16 +4,26 @@ import { mergeRouteModules, traverseTreeValues } from '@vben/utils';
 
 import { coreRoutes, fallbackNotFoundRoute } from './core';
 
-const dynamicRouteFiles = import.meta.glob('./modules/**/*.ts', {
+// 共享路由：modules/ 根目录下的 .ts 文件
+const sharedRouteFiles = import.meta.glob('./modules/*.ts', {
   eager: true,
 });
 
-// 有需要可以自行打开注释，并创建文件夹
-// const externalRouteFiles = import.meta.glob('./external/**/*.ts', { eager: true });
-// const staticRouteFiles = import.meta.glob('./static/**/*.ts', { eager: true });
+// 各 target 专属路由：modules/{target}/ 目录下的 .ts 文件
+const targetRouteFiles: Record<string, Record<string, unknown>> = {
+  admin: import.meta.glob('./modules/admin/**/*.ts', { eager: true }),
+  workflow: import.meta.glob('./modules/workflow/**/*.ts', { eager: true }),
+  b2b: import.meta.glob('./modules/b2b/**/*.ts', { eager: true }),
+  dashboard: import.meta.glob('./modules/dashboard/**/*.ts', { eager: true }),
+};
 
-/** 动态路由 */
-const dynamicRoutes: RouteRecordRaw[] = mergeRouteModules(dynamicRouteFiles);
+const target = import.meta.env.VITE_APP_TARGET || 'admin';
+
+/** 动态路由 = 共享路由 + 当前 target 专属路由 */
+const dynamicRoutes: RouteRecordRaw[] = mergeRouteModules({
+  ...sharedRouteFiles,
+  ...(targetRouteFiles[target] || {}),
+});
 
 /** 外部路由列表，访问这些页面可以不需要Layout，可能用于内嵌在别的系统(不会显示在菜单中) */
 // const externalRoutes: RouteRecordRaw[] = mergeRouteModules(externalRouteFiles);

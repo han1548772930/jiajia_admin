@@ -44,6 +44,10 @@ const coreRoutes: RouteRecordRaw[] = [
       hideInTab: true,
       title: 'Authentication',
     },
+    props: ()=>({
+      pageTitle: $t('authentication.pageTitle'),
+      pageDescription: $t('authentication.pageDesc'),
+    }),
     name: 'Authentication',
     path: '/auth',
     redirect: LOGIN_PATH,

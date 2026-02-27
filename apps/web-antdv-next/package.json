@@ -17,6 +17,10 @@
   "type": "module",
   "scripts": {
     "build": "pnpm vite build --mode production",
+    "build:antdv-next:admin": "cross-env VITE_APP_TARGET=admin pnpm vite build --mode production",
+    "build:antdv-next:workflow": "cross-env VITE_APP_TARGET=workflow pnpm vite build --mode production",
+    "build:b2b": "cross-env VITE_APP_TARGET=b2b pnpm vite build --mode production",
+    "build:dashboard": "cross-env VITE_APP_TARGET=dashboard pnpm vite build --mode production",
     "build:analyze": "pnpm vite build --mode analyze",
     "dev": "pnpm vite --mode development",
     "preview": "vite preview",
@@ -26,6 +30,7 @@
     "#/*": "./src/*"
   },
   "dependencies": {
+    "@ag-grid-community/locale": "^35.0.1",
     "@vben/access": "workspace:*",
     "@vben/common-ui": "workspace:*",
     "@vben/constants": "workspace:*",
@@ -41,10 +46,17 @@
     "@vben/types": "workspace:*",
     "@vben/utils": "workspace:*",
     "@vueuse/core": "catalog:",
+    "ag-grid-community": "^35.0.1",
+    "ag-grid-enterprise": "^35.0.1",
+    "ag-grid-vue3": "^35.0.1",
     "antdv-next": "catalog:",
+    "crypto-js": "^4.2.0",
     "dayjs": "catalog:",
     "pinia": "catalog:",
     "vue": "catalog:",
     "vue-router": "catalog:"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2"
   }
 }
