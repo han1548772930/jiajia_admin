@@ -119,7 +119,7 @@ const groups = shallowRef<TaskApi.AutoTaskGroupItem[]>([]);
 const flatGroups = shallowRef<TaskApi.AutoTaskGroupItem[]>([]);
 const allJobs = shallowRef<TaskApi.JobData[]>([]);
 const displayJobs = shallowRef<TaskApi.JobData[]>([]);
-const { run: runWithLoading } = useRequestLoading();
+const { loading, run: runWithLoading } = useRequestLoading();
 const { loading: refreshing, run: runWithRefreshing } = useRequestLoading();
 const gridApi = shallowRef<GridApi | null>(null);
 
@@ -179,14 +179,13 @@ function scheduleGridUpdate(cb: () => void) {
 function syncGridData() {
   if (!gridApi.value) return;
   scheduleGridUpdate(() => {
-    gridApi.value!.setGridOption('loading', true);
     gridApi.value!.setGridOption('rowData', displayJobs.value);
-    gridApi.value!.setGridOption('loading', false);
   });
 }
 
 function onGridReady(params: GridReadyEvent) {
   gridApi.value = params.api;
+  gridApi.value.setGridOption('loading', loading.value);
   syncGridData();
 }
 
@@ -227,6 +226,13 @@ function updateDisplay() {
 }
 
 watch([selectedKeys, jobNameFilter, allJobs], updateDisplay);
+
+watch(loading, (value) => {
+  if (!gridApi.value) return;
+  scheduleGridUpdate(() => {
+    gridApi.value!.setGridOption('loading', value);
+  });
+});
 
 function onTreeSelect(keys: (string | number)[]) {
   selectedKeys.value = keys as number[];

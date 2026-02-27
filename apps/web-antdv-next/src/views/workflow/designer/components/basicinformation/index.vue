@@ -86,7 +86,7 @@ function resetDesignerState() {
     name: '',
     remark: '',
     sysid: 0,
-    type: '',
+    type: undefined,
   };
 
   nodeStore.node.childNode = undefined;

@@ -1,140 +1,239 @@
-import { computed } from 'vue';
+﻿import { computed } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
 import { themeQuartz, type Theme } from 'ag-grid-community';
 
-// 基础配置 (所有主题共享的样式)
+// Shared base params for AG Grid theme.
 const baseTheme = {
+  fontFamily: 'inherit',
+  fontSize: 14,
   headerFontFamily: 'inherit',
   headerFontSize: 14,
   headerFontWeight: 600,
-  fontFamily: 'inherit',
-  fontSize: 14,
-  spacing: 8,
-  rowHeight: 40,
   headerHeight: 48,
   iconSize: 16,
   rangeSelectionBorderStyle: 'solid',
+  rowHeight: 40,
+  spacing: 8,
 } as const;
 
-// 主题调色板
-const themePalettes = {
+interface ThemePalette {
+  accentColor: string;
+  backgroundColor: string;
+  borderColor: string;
+  borderRadius: number;
+  borderWidth: number;
+  foregroundColor: string;
+  headerBackgroundColor: string;
+  rowHoverColor: string;
+  selectedRowBackgroundColor: string;
+  tooltipBackgroundColor: string;
+  tooltipTextColor: string;
+  wrapperBorderRadius: number;
+}
+
+const themePalettes: Record<'dark' | 'light', ThemePalette> = {
   light: {
+    accentColor: 'oklch(0.45 0.24 277.023)',
     backgroundColor: 'oklch(1 0 0)',
-    foregroundColor: 'oklch(0.21 0.006 285.885)',
     borderColor: 'oklch(0.95 0 0)',
+    borderRadius: 4,
     borderWidth: 1,
+    foregroundColor: 'oklch(0.21 0.006 285.885)',
     headerBackgroundColor: 'oklch(0.98 0 0)',
     rowHoverColor: 'oklch(0.98 0 0)',
-    accentColor: 'oklch(0.45 0.24 277.023)',
-    borderRadius: 4,
-    wrapperBorderRadius: 8,
+    selectedRowBackgroundColor: 'oklch(0.98 0 0)',
     tooltipBackgroundColor: 'oklch(0.14 0.005 285.823)',
     tooltipTextColor: 'oklch(0.92 0.004 286.32)',
+    wrapperBorderRadius: 8,
   },
   dark: {
-    backgroundColor: '#0f172a', // slate-900
-    foregroundColor: '#e2e8f0', // slate-200
-    borderColor: '#1e293b', // slate-800
-    borderWidth: 1,
-    headerBackgroundColor: '#1e293b', // slate-800
-    rowHoverColor: '#334155', // slate-700
     accentColor: 'oklch(0.58 0.233 277.117)',
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
     borderRadius: 4,
+    borderWidth: 1,
+    foregroundColor: '#e2e8f0',
+    headerBackgroundColor: '#1e293b',
+    rowHoverColor: '#334155',
+    selectedRowBackgroundColor: '#334155',
+    tooltipBackgroundColor: '#020617',
+    tooltipTextColor: '#e2e8f0',
     wrapperBorderRadius: 8,
-    tooltipBackgroundColor: '#020617', // slate-950
-    tooltipTextColor: '#e2e8f0', // slate-200
   },
-} as const;
-
-type ThemePalette = (typeof themePalettes)[keyof typeof themePalettes];
+};
 export type AgThemeName = keyof typeof themePalettes;
+
+function readCssColorVar(variable: string, fallback: string) {
+  if (typeof document === 'undefined') return fallback;
+
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(variable)
+    .trim();
+  if (!raw) return fallback;
+
+  if (
+    raw.startsWith('#') ||
+    raw.startsWith('rgb') ||
+    raw.startsWith('hsl') ||
+    raw.startsWith('oklch')
+  ) {
+    return raw;
+  }
+
+  return `hsl(${raw})`;
+}
+
+function readCssColorVarAlpha(
+  variable: string,
+  alpha: number,
+  fallback: string,
+) {
+  if (typeof document === 'undefined') return fallback;
+
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(variable)
+    .trim();
+  if (!raw) return fallback;
+
+  if (
+    raw.startsWith('#') ||
+    raw.startsWith('rgb') ||
+    raw.startsWith('hsl') ||
+    raw.startsWith('oklch')
+  ) {
+    return fallback;
+  }
+
+  return `hsl(${raw} / ${alpha})`;
+}
+
+function resolveThemePalette(themeName: AgThemeName): ThemePalette {
+  const fallback = themePalettes[themeName];
+
+  const backgroundColor = readCssColorVar('--card', fallback.backgroundColor);
+  const foregroundColor = readCssColorVar('--foreground', fallback.foregroundColor);
+
+  return {
+    ...fallback,
+    accentColor: readCssColorVar('--primary', fallback.accentColor),
+    backgroundColor,
+    borderColor: readCssColorVar('--border', fallback.borderColor),
+    foregroundColor,
+    // Keep header on the same tone as cards, avoid overly dark header strips.
+    headerBackgroundColor: backgroundColor,
+    // Use primary tint with alpha for clearer hover/selected states in dark mode.
+    rowHoverColor: readCssColorVarAlpha(
+      '--primary',
+      0.08,
+      readCssColorVar('--accent', fallback.rowHoverColor),
+    ),
+    selectedRowBackgroundColor: readCssColorVarAlpha(
+      '--primary',
+      0.16,
+      readCssColorVar('--accent-lighter', fallback.selectedRowBackgroundColor),
+    ),
+    tooltipBackgroundColor: readCssColorVar(
+      '--popover',
+      fallback.tooltipBackgroundColor,
+    ),
+    tooltipTextColor: readCssColorVar(
+      '--popover-foreground',
+      fallback.tooltipTextColor,
+    ),
+  };
+}
 
 function createFullTheme(palette: ThemePalette) {
   const {
-    borderWidth,
-    borderColor,
-    foregroundColor,
     accentColor,
     backgroundColor,
+    borderColor,
+    borderWidth,
+    foregroundColor,
     headerBackgroundColor,
     rowHoverColor,
+    selectedRowBackgroundColor,
   } = palette;
   const borderStyle = `${borderWidth}px solid ${borderColor}`;
 
   return {
     ...baseTheme,
+    accentColor,
     backgroundColor,
-    foregroundColor,
     borderColor,
     borderWidth,
-    headerBackgroundColor,
-    oddRowBackgroundColor: backgroundColor,
-    rowHoverColor,
-    accentColor,
     borderRadius: palette.borderRadius,
-    wrapperBorderRadius: palette.wrapperBorderRadius,
-    headerTextColor: foregroundColor,
     cellTextColor: foregroundColor,
-    selectedRowBackgroundColor: accentColor,
-    rangeSelectionBorderColor: accentColor,
-    rangeSelectionBackgroundColor: accentColor,
+    columnBorder: borderStyle,
+    foregroundColor,
+    headerBackgroundColor,
+    headerColumnBorder: borderStyle,
+    headerTextColor: foregroundColor,
     menuBackgroundColor: backgroundColor,
-    menuTextColor: foregroundColor,
     menuBorder: borderStyle,
     menuSeparatorColor: borderColor,
+    menuTextColor: foregroundColor,
+    oddRowBackgroundColor: backgroundColor,
     panelBackgroundColor: headerBackgroundColor,
-    sideBarBackgroundColor: headerBackgroundColor,
-    rowBorder: borderStyle,
-    columnBorder: borderStyle,
-    headerColumnBorder: borderStyle,
     pinnedColumnBorder: borderStyle,
+    rangeSelectionBackgroundColor: selectedRowBackgroundColor,
+    rangeSelectionBorderColor: accentColor,
+    rowBorder: borderStyle,
+    rowHoverColor,
+    selectedRowBackgroundColor,
+    sideBarBackgroundColor: headerBackgroundColor,
     tooltipBackgroundColor: palette.tooltipBackgroundColor,
-    tooltipTextColor: palette.tooltipTextColor,
     tooltipBorder: borderStyle,
+    tooltipTextColor: palette.tooltipTextColor,
+    wrapperBorderRadius: palette.wrapperBorderRadius,
   };
 }
 
 export function getAgTheme(themeName: AgThemeName) {
-  return themePalettes[themeName] ? createFullTheme(themePalettes[themeName]) : createFullTheme(themePalettes.light);
+  const palette = themePalettes[themeName]
+    ? resolveThemePalette(themeName)
+    : resolveThemePalette('light');
+  return createFullTheme(palette);
 }
 
 export function createAgGridTheme(themeName: AgThemeName): Theme {
-  const themeParams = getAgTheme(themeName);
-  return themeQuartz.withParams(themeParams);
+  return themeQuartz.withParams(getAgTheme(themeName));
 }
 
 export function useAgGridTheme() {
   const { isDark } = usePreferences();
 
-  const normalizedTheme = computed<AgThemeName>(() => (isDark.value ? 'dark' : 'light'));
+  const normalizedTheme = computed<AgThemeName>(() =>
+    isDark.value ? 'dark' : 'light',
+  );
 
-  const currentAgGridTheme = computed(() => {
-    return createAgGridTheme(normalizedTheme.value);
-  });
+  const currentAgGridTheme = computed(() =>
+    createAgGridTheme(normalizedTheme.value),
+  );
 
   const defaultColDef = computed(() => ({
-    minWidth: 100,
     filter: true,
-    sortable: true,
+    minWidth: 100,
     resizable: true,
+    sortable: true,
   }));
 
   const gridOptions = computed(() => ({
     animateRows: true,
-    suppressMenuHide: false,
+    animationDuration: 200,
     enableCellTextSelection: true,
     ensureDomOrder: true,
-    animationDuration: 200,
+    suppressMenuHide: false,
   }));
 
   return {
-    isDark,
+    createAgGridTheme,
     currentAgGridTheme,
     defaultColDef,
-    gridOptions,
     getAgTheme,
-    createAgGridTheme,
+    gridOptions,
+    isDark,
   };
 }

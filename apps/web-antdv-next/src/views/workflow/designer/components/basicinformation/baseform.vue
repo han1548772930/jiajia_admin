@@ -4,7 +4,8 @@
       class="mt-5" autocomplete="off" :validate-trigger="[]">
       <FormItem label="流程分类" name="type" :rules="[{ required: true, message: '请选择流程分类' }]">
         <Select v-model:value="props.formState.type" show-search
-          :options="props.category.map((i) => ({ label: i.Name, value: i.Sysid }))" :filter-option="filterOption" />
+          :options="props.category.map((i) => ({ label: i.Name, value: i.Sysid }))" :filter-option="filterOption"
+          placeholder="请选择流程分类" />
       </FormItem>
 
       <FormItem label="流程名称" name="name" :rules="[{ required: true, message: '请输入流程名称' }]">

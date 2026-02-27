@@ -79,7 +79,7 @@ function resetDesignerState() {
     name: '',
     remark: '',
     sysid: 0,
-    type: '',
+    type: undefined,
   };
 
   nodeStore.node.childNode = undefined;
@@ -222,17 +222,17 @@ async function openCreateTemplate() {
   await router.push('/workflow/designer/basic-information');
 }
 
-async function openFormDesigner() {
-  await router.push('/workflow/designer/form');
-}
+// async function openFormDesigner() {
+//   await router.push('/workflow/designer/form');
+// }
 
-async function openFormPreview() {
-  await router.push('/workflow/designer/form-preview');
-}
+// async function openFormPreview() {
+//   await router.push('/workflow/designer/form-preview');
+// }
 
-async function openSavedForms() {
-  await router.push('/workflow/designer/form-saved');
-}
+// async function openSavedForms() {
+//   await router.push('/workflow/designer/form-saved');
+// }
 
 async function openTemplateEditor(mode: 'copy' | 'edit', item: WorkflowApi.TemplateItem) {
   await runWithLoading(async () => {
@@ -321,19 +321,14 @@ loadData();
     <div class="flex h-full flex-col gap-3">
       <Card>
         <div class="flex flex-wrap items-center gap-2">
-          <Input
-            v-model:value="keywordInput"
-            class="w-[300px]"
-            placeholder="流程名称"
-            @press-enter="handleSearch"
-          />
+          <Input v-model:value="keywordInput" class="w-[300px]" placeholder="流程名称" @press-enter="handleSearch" />
           <Button type="primary" @click="handleSearch">搜索</Button>
           <Button @click="handleReset">重置</Button>
           <Button :loading="loading" @click="loadData">刷新</Button>
           <Button type="primary" @click="openCreateTemplate">新增模板</Button>
-          <Button @click="openFormDesigner">表单设计器</Button>
+          <!-- <Button @click="openFormDesigner">表单设计器</Button>
           <Button @click="openFormPreview">表单回显</Button>
-          <Button @click="openSavedForms">已保存表单</Button>
+          <Button @click="openSavedForms">已保存表单</Button> -->
           <Button type="primary" ghost @click="openCategoryModal('add')">新增分组</Button>
         </div>
       </Card>

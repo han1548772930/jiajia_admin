@@ -5,7 +5,7 @@ import { markRaw } from "vue";
 const useFormStore = defineStore('form-store', {
   state: (): { form: FormState, category: Category[], users: NodeUsersDetail[], roles: NodeUsersDetail[], activeKey: string } => ({
     form: {
-      type: '',
+      type: undefined,
       name: "",
       enable: false,
       remark: "",
@@ -26,6 +26,5 @@ const useFormStore = defineStore('form-store', {
   })
 });
 export default useFormStore;
-
 
 
