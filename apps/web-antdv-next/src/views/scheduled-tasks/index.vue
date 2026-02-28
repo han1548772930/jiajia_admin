@@ -1,80 +1,4 @@
-﻿<template>
-  <Page auto-content-height content-class="flex h-full p-2">
-    <div class="flex h-full w-full">
-      <!-- 左侧树 -->
-      <div class="w-60 shrink-0 border-r border-border flex flex-col h-full overflow-hidden">
-        <div class="flex-1 overflow-y-auto p-2" @contextmenu.prevent="onTreeContainerRightClick">
-          <Tree v-model:expanded-keys="expandedKeys" v-model:selected-keys="selectedKeys" :tree-data="treeDataForTree"
-            :field-names="{ title: 'Name', key: 'Sysid', children: 'children' }" block-node show-line draggable
-            @drop="onTreeDrop" @select="onTreeSelect" @right-click="onTreeRightClick">
-            <template #titleRender="{ Name, _jobCount, Sysid }">
-              <div v-if="renamingNodeId === Sysid" @click.stop @mousedown.stop>
-                <Input v-model:value="renamingName" class="w-[120px]" @press-enter="onRenameConfirm"
-                  @blur="onRenameConfirm" @keydown.esc="onRenameCancel" />
-              </div>
-              <span v-else class="inline-flex h-6 items-center gap-1 leading-none">
-                <span class="leading-none">{{ Name }} ({{ _jobCount }})</span>
-              </span>
-            </template>
-          </Tree>
-        </div>
-      </div>
-
-      <!-- 右侧内容 -->
-      <div class="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
-        <!-- 工具栏 -->
-        <div class="p-2 border-b border-border flex items-center gap-2 shrink-0">
-          <span class="text-sm text-muted-foreground">任务名称</span>
-          <Select v-model:value="jobNameFilter" :options="jobOptions" show-search option-filter-prop="label" allow-clear
-            placeholder="选择或搜索任务" class="w-[200px]" />
-          <Button @click="onReset">重置</Button>
-          <Button type="primary" :loading="refreshing" @click="onRefresh">
-            刷新
-          </Button>
-        </div>
-
-        <!-- AG Grid 表格 -->
-        <div class="flex-1 min-h-0 p-2">
-          <AgGridVue class="w-full h-full" :theme="currentAgGridTheme" :column-defs="columnDefs"
-            :default-col-def="defaultColDef" :locale-text="AG_GRID_LOCALE_CN" :get-row-id="getRowId" :header-height="35"
-            :row-data="displayJobs" :loading="loading" v-bind="gridOptions" @grid-ready="onGridReady" />
-        </div>
-      </div>
-    </div>
-
-    <!-- 右键菜单 -->
-    <Dropdown :open="contextMenuVisible" :trigger="[]" :menu="{
-      items: activeContextMenuItems,
-      onClick: onContextMenuClick,
-    }" @open-change="(v: boolean) => { contextMenuVisible = v }">
-      <div class="fixed w-px h-px pointer-events-none" :style="{
-        left: contextMenuPos.x + 'px',
-        top: contextMenuPos.y + 'px',
-      }" />
-    </Dropdown>
-
-    <!-- 分组弹窗 -->
-    <GroupModal />
-
-    <!-- 任务表单弹窗 -->
-    <TaskModal />
-  </Page>
-</template>
-
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import {
-  Button,
-  Dropdown,
-  Input,
-  message,
-  Select,
-  Tree,
-} from 'antdv-next';
-import { confirm, Page, useVbenModal } from '@vben/common-ui';
-import { AG_GRID_LOCALE_CN } from '@ag-grid-community/locale';
-import { AgGridVue } from 'ag-grid-vue3';
 import type {
   ColDef,
   GetRowIdFunc,
@@ -83,6 +7,27 @@ import type {
   GridReadyEvent,
   ValueFormatterParams,
 } from 'ag-grid-community';
+
+import type { GroupNode } from './utils/group-tree';
+
+import type { TaskApi } from '#/api/task';
+
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
+import { useRouter } from 'vue-router';
+
+import { confirm, Page, useVbenModal } from '@vben/common-ui';
+
+import { AG_GRID_LOCALE_CN } from '@ag-grid-community/locale';
+import { AgGridVue } from 'ag-grid-vue3';
+import { Button, Dropdown, Input, message, Select, Tree } from 'antdv-next';
 import dayjs from 'dayjs';
 
 import {
@@ -91,21 +36,26 @@ import {
   getJobListApi,
   getTaskGroupListApi,
   JobOperateType,
-  type TaskApi,
   triggerJobApi,
   updateTaskGroupApi,
 } from '#/api/task';
+import { useAgGridTheme } from '#/composables/useAgGridTheme';
 import { useRequestLoading } from '#/composables/useRequestLoading';
 import { useTaskFormStore } from '#/store/task-form';
 import { useTaskLogStore } from '#/store/task-log';
-import { useAgGridTheme } from '#/composables/useAgGridTheme';
-import { getJobTypeLabel } from './helpers';
-import TaskFormModalComp from './components/TaskFormModal.vue';
+
 import GroupFormModalComp from './components/GroupFormModal.vue';
-import TableTag from './components/TableTag.vue';
 import TableActionButtons from './components/TableActionButtons.vue';
+import TableTag from './components/TableTag.vue';
+import TaskFormModalComp from './components/TaskFormModal.vue';
+import { getJobTypeLabel } from './helpers';
 import { fillTaskFormFromJob } from './utils/fill-task-form';
-import { buildGroupTree, collectGroupJobs, findGroupNode, findGroupParent, type GroupNode } from './utils/group-tree';
+import {
+  buildGroupTree,
+  collectGroupJobs,
+  findGroupNode,
+  findGroupParent,
+} from './utils/group-tree';
 
 const router = useRouter();
 const taskForm = useTaskFormStore();
@@ -132,7 +82,9 @@ const gridApi = shallowRef<GridApi | null>(null);
 // 筛选
 const jobNameFilter = ref<string | undefined>();
 const jobOptions = computed(() =>
-  allJobs.value.filter((j) => j.JobName).map((j) => ({ label: j.JobName, value: j.JobName })),
+  allJobs.value
+    .filter((j) => j.JobName)
+    .map((j) => ({ label: j.JobName, value: j.JobName })),
 );
 
 // 树
@@ -146,7 +98,12 @@ const columnDefs = computed<ColDef[]>(() => [
     headerValueGetter: () => `任务名称 (${displayJobs.value.length})`,
     width: 200,
   },
-  { field: 'JobStatus', headerName: '任务状态', width: 120, cellRenderer: TableTag },
+  {
+    field: 'JobStatus',
+    headerName: '任务状态',
+    width: 120,
+    cellRenderer: TableTag,
+  },
   {
     field: 'JobType',
     headerName: '任务类型',
@@ -184,12 +141,13 @@ const columnDefs = computed<ColDef[]>(() => [
   },
 ]);
 
-const getRowId: GetRowIdFunc = (params: GetRowIdParams) => String(params.data.JobId);
+const getRowId: GetRowIdFunc = (params: GetRowIdParams) =>
+  String(params.data.JobId);
 
 type TreeDropInfo = {
   dragNode: { key: number | string };
-  node: { key: number | string };
   dropToGap: boolean;
+  node: { key: number | string };
 };
 
 type TreeRightClickInfo = {
@@ -206,8 +164,10 @@ function onGridReady(params: GridReadyEvent) {
   params.api.refreshHeader();
 }
 
-const treeData = computed<GroupNode[]>(() => buildGroupTree(groups.value, allJobs.value));
-type TreeDataNode = GroupNode & { key: number; children?: TreeDataNode[] };
+const treeData = computed<GroupNode[]>(() =>
+  buildGroupTree(groups.value, allJobs.value),
+);
+type TreeDataNode = GroupNode & { children?: TreeDataNode[]; key: number };
 const treeDataForTree = computed<TreeDataNode[]>(() => {
   const mapNode = (node: GroupNode): TreeDataNode => ({
     ...node,
@@ -221,7 +181,10 @@ const treeDataForTree = computed<TreeDataNode[]>(() => {
 async function fetchData() {
   await runWithLoading(
     async () => {
-      const [groupRes, jobRes] = await Promise.all([getTaskGroupListApi(), getJobListApi()]);
+      const [groupRes, jobRes] = await Promise.all([
+        getTaskGroupListApi(),
+        getJobListApi(),
+      ]);
       if (!groupRes.Success) {
         message.error(groupRes.Message);
         return;
@@ -255,7 +218,7 @@ watch(displayJobs, () => {
   gridApi.value?.refreshHeader();
 });
 
-function onTreeSelect(keys: (string | number)[]) {
+function onTreeSelect(keys: (number | string)[]) {
   selectedKeys.value = keys as number[];
 }
 
@@ -290,7 +253,7 @@ const onTreeDrop = async (info: TreeDropInfo) => {
 };
 
 // 重命名
-const renamingNodeId = ref<number | null>(null);
+const renamingNodeId = ref<null | number>(null);
 const renamingName = ref('');
 
 async function onRenameConfirm() {
@@ -302,11 +265,11 @@ async function onRenameConfirm() {
   const newName = renamingName.value.trim();
   if (!newName || newName === node.Name) return;
   const res = await updateTaskGroupApi(id, newName, node.ParentId ?? 0);
-  if (!res.Success) {
-    message.error(res.Message || '重命名失败');
-  } else {
+  if (res.Success) {
     message.success('重命名成功');
     await fetchData();
+  } else {
+    message.error(res.Message || '重命名失败');
   }
 }
 
@@ -326,9 +289,7 @@ const nodeContextMenuItems = [
   { key: 'delete', label: '删除分组', danger: true },
 ];
 
-const rootContextMenuItems = [
-  { key: 'addRootGroup', label: '新增分组' },
-];
+const rootContextMenuItems = [{ key: 'addRootGroup', label: '新增分组' }];
 
 const activeContextMenuItems = ref(nodeContextMenuItems);
 
@@ -395,15 +356,6 @@ function onContextMenu(e: ContextMenuClickInfo, sysid: number) {
       taskModalApi.setData({ groups: flatGroups.value, fetchData }).open();
       break;
     }
-    case 'rename': {
-      renamingNodeId.value = sysid;
-      renamingName.value = node.Name;
-      nextTick(() => {
-        const input = document.querySelector('.ant-tree .ant-input') as HTMLInputElement;
-        if (input) { input.focus(); input.select(); }
-      });
-      break;
-    }
     case 'delete': {
       confirm({
         content: `确定要删除分组 ${node.Name} 吗？`,
@@ -423,10 +375,22 @@ function onContextMenu(e: ContextMenuClickInfo, sysid: number) {
       });
       break;
     }
+    case 'rename': {
+      renamingNodeId.value = sysid;
+      renamingName.value = node.Name;
+      nextTick(() => {
+        const input = document.querySelector(
+          '.ant-tree .ant-input',
+        ) as HTMLInputElement;
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      });
+      break;
+    }
   }
 }
-
-
 
 function onReset() {
   jobNameFilter.value = undefined;
@@ -504,3 +468,119 @@ function onTableToLog(params: TaskApi.JobData) {
 
 onMounted(fetchData);
 </script>
+
+<template>
+  <Page auto-content-height content-class="flex h-full p-2">
+    <div class="flex h-full w-full">
+      <!-- 左侧树 -->
+      <div
+        class="flex h-full w-60 shrink-0 flex-col overflow-hidden border-r border-border"
+      >
+        <div
+          class="flex-1 overflow-y-auto p-2"
+          @contextmenu.prevent="onTreeContainerRightClick"
+        >
+          <Tree
+            v-model:expanded-keys="expandedKeys"
+            v-model:selected-keys="selectedKeys"
+            :tree-data="treeDataForTree"
+            :field-names="{ title: 'Name', key: 'Sysid', children: 'children' }"
+            block-node
+            show-line
+            draggable
+            @drop="onTreeDrop"
+            @select="onTreeSelect"
+            @right-click="onTreeRightClick"
+          >
+            <template #titleRender="{ Name, _jobCount, Sysid }">
+              <div v-if="renamingNodeId === Sysid" @click.stop @mousedown.stop>
+                <Input
+                  v-model:value="renamingName"
+                  class="w-[120px]"
+                  @press-enter="onRenameConfirm"
+                  @blur="onRenameConfirm"
+                  @keydown.esc="onRenameCancel"
+                />
+              </div>
+              <span
+                v-else
+                class="inline-flex h-6 items-center gap-1 leading-none"
+              >
+                <span class="leading-none">{{ Name }} ({{ _jobCount }})</span>
+              </span>
+            </template>
+          </Tree>
+        </div>
+      </div>
+
+      <!-- 右侧内容 -->
+      <div class="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
+        <!-- 工具栏 -->
+        <div
+          class="flex shrink-0 items-center gap-2 border-b border-border p-2"
+        >
+          <span class="text-sm text-muted-foreground">任务名称</span>
+          <Select
+            v-model:value="jobNameFilter"
+            :options="jobOptions"
+            show-search
+            option-filter-prop="label"
+            allow-clear
+            placeholder="选择或搜索任务"
+            class="w-[200px]"
+          />
+          <Button @click="onReset">重置</Button>
+          <Button type="primary" :loading="refreshing" @click="onRefresh">
+            刷新
+          </Button>
+        </div>
+
+        <!-- AG Grid 表格 -->
+        <div class="min-h-0 flex-1 p-2">
+          <AgGridVue
+            class="h-full w-full"
+            :theme="currentAgGridTheme"
+            :column-defs="columnDefs"
+            :default-col-def="defaultColDef"
+            :locale-text="AG_GRID_LOCALE_CN"
+            :get-row-id="getRowId"
+            :header-height="35"
+            :row-data="displayJobs"
+            :loading="loading"
+            v-bind="gridOptions"
+            @grid-ready="onGridReady"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- 右键菜单 -->
+    <Dropdown
+      :open="contextMenuVisible"
+      :trigger="[]"
+      :menu="{
+        items: activeContextMenuItems,
+        onClick: onContextMenuClick,
+      }"
+      @open-change="
+        (v: boolean) => {
+          contextMenuVisible = v;
+        }
+      "
+    >
+      <div
+        class="pointer-events-none fixed h-px w-px"
+        :style="{
+          left: `${contextMenuPos.x}px`,
+          top: `${contextMenuPos.y}px`,
+        }"
+      ></div>
+    </Dropdown>
+
+    <!-- 分组弹窗 -->
+    <GroupModal />
+
+    <!-- 任务表单弹窗 -->
+    <TaskModal />
+  </Page>
+</template>

@@ -1,31 +1,20 @@
-<template>
-  <Page auto-content-height content-class="flex h-full p-2">
-    <div class="min-h-0 flex-1">
-      <AgGridVue class="h-full w-full" :theme="currentAgGridTheme" :column-defs="columnDefs" :components="agComponents"
-        :default-col-def="defaultColDef" :locale-text="AG_GRID_LOCALE_CN" :get-row-id="getRowId" :header-height="35"
-        :row-data="logData" :loading="loading" :is-row-master="isRowMaster" detail-cell-renderer="logDetailCellRenderer"
-        :detail-row-height="420" master-detail v-bind="gridOptions" />
-    </div>
-  </Page>
-</template>
-
 <script setup lang="ts">
+import type { ColDef, GetRowIdFunc, GetRowIdParams } from 'ag-grid-community';
+
+import type { TaskApi } from '#/api/task';
+
 import { onMounted, ref, shallowRef } from 'vue';
 
-import { AG_GRID_LOCALE_CN } from '@ag-grid-community/locale';
 import { Page } from '@vben/common-ui';
 
-import type {
-  ColDef,
-  GetRowIdFunc,
-  GetRowIdParams,
-} from 'ag-grid-community';
+import { AG_GRID_LOCALE_CN } from '@ag-grid-community/locale';
 import { AgGridVue } from 'ag-grid-vue3';
 
-import { getJobLogsApi, type TaskApi } from '#/api/task';
+import { getJobLogsApi } from '#/api/task';
 import { useAgGridTheme } from '#/composables/useAgGridTheme';
 import { useRequestLoading } from '#/composables/useRequestLoading';
 import { useTaskLogStore } from '#/store/task-log';
+
 import LogDetailCellRenderer from './components/LogDetailCellRenderer.vue';
 
 const taskLog = useTaskLogStore();
@@ -76,8 +65,7 @@ const columnDefs = shallowRef<ColDef[]>([
   },
 ]);
 
-const getRowId: GetRowIdFunc = (params: GetRowIdParams) =>
-  params.data.__rowId;
+const getRowId: GetRowIdFunc = (params: GetRowIdParams) => params.data.__rowId;
 
 async function fetchLogs() {
   const jobId = taskLog.jobId;
@@ -95,3 +83,27 @@ async function fetchLogs() {
 
 onMounted(fetchLogs);
 </script>
+
+<template>
+  <Page auto-content-height content-class="flex h-full p-2">
+    <div class="min-h-0 flex-1">
+      <AgGridVue
+        class="h-full w-full"
+        :theme="currentAgGridTheme"
+        :column-defs="columnDefs"
+        :components="agComponents"
+        :default-col-def="defaultColDef"
+        :locale-text="AG_GRID_LOCALE_CN"
+        :get-row-id="getRowId"
+        :header-height="35"
+        :row-data="logData"
+        :loading="loading"
+        :is-row-master="isRowMaster"
+        detail-cell-renderer="logDetailCellRenderer"
+        :detail-row-height="420"
+        master-detail
+        v-bind="gridOptions"
+      />
+    </div>
+  </Page>
+</template>

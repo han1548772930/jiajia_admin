@@ -1,13 +1,10 @@
-﻿import { computed } from 'vue';
+import type { ColDef, GridOptions, Theme } from 'ag-grid-community';
+
+import { computed } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
-import {
-  themeQuartz,
-  type ColDef,
-  type GridOptions,
-  type Theme,
-} from 'ag-grid-community';
+import { themeQuartz } from 'ag-grid-community';
 
 // Shared base params for AG Grid theme.
 const baseTheme = {
@@ -118,7 +115,10 @@ function resolveThemePalette(themeName: AgThemeName): ThemePalette {
   const fallback = themePalettes[themeName];
 
   const backgroundColor = readCssColorVar('--card', fallback.backgroundColor);
-  const foregroundColor = readCssColorVar('--foreground', fallback.foregroundColor);
+  const foregroundColor = readCssColorVar(
+    '--foreground',
+    fallback.foregroundColor,
+  );
 
   return {
     ...fallback,

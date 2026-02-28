@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import type { FormInstance } from 'antdv-next';
+
 import { reactive, ref } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
+
 import { Form, FormItem, Input, message } from 'antdv-next';
-import type { FormInstance } from 'antdv-next';
 
 import { createTaskGroupApi, updateTaskGroupApi } from '#/api/task';
 
@@ -43,7 +45,10 @@ const [Modal, modalApi] = useVbenModal({
         }
         message.success('修改成功');
       } else {
-        const res = await createTaskGroupApi(formState.name, modalData.value?.parentId ?? 0);
+        const res = await createTaskGroupApi(
+          formState.name,
+          modalData.value?.parentId ?? 0,
+        );
         if (!res.Success) {
           message.error(res.Message);
           throw new Error(res.Message);
@@ -73,7 +78,9 @@ const [Modal, modalApi] = useVbenModal({
   },
   onOpened() {
     requestAnimationFrame(() => {
-      const input = document.querySelector('.group-form-modal .ant-input') as HTMLInputElement | null;
+      const input = document.querySelector(
+        '.group-form-modal .ant-input',
+      ) as HTMLInputElement | null;
       if (input) {
         input.focus();
         input.select();
@@ -84,10 +91,22 @@ const [Modal, modalApi] = useVbenModal({
 </script>
 
 <template>
-  <Modal :title="modalData?.mode === 'rename' ? '重命名分组' : '新增分组'" class="group-form-modal w-[400px]"
-    contentClass="min-h-20">
-    <Form ref="formRef" :model="formState" layout="vertical" :validate-trigger="[]">
-      <FormItem label="分组名称" name="name" :rules="[{ required: true, message: '请输入分组名称' }]">
+  <Modal
+    :title="modalData?.mode === 'rename' ? '重命名分组' : '新增分组'"
+    class="group-form-modal w-[400px]"
+    content-class="min-h-20"
+  >
+    <Form
+      ref="formRef"
+      :model="formState"
+      layout="vertical"
+      :validate-trigger="[]"
+    >
+      <FormItem
+        label="分组名称"
+        name="name"
+        :rules="[{ required: true, message: '请输入分组名称' }]"
+      >
         <Input v-model:value="formState.name" placeholder="请输入分组名称" />
       </FormItem>
     </Form>
