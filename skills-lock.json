@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "skills": {
+    "vite": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "computedHash": "f406fceb1b9020cd759a728d8424de7ffd8dfe5874bd97be2724571741e54852"
+    },
+    "vue": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "computedHash": "f72b54618560c53d65740515ded5bb833750c4574dbe961fd21f022bd2b31a74"
+    },
+    "vue-best-practices": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "computedHash": "b61d50aeced30790f4e8e08d15da4b7148443e312bd3c6fedc38b500baa75f17"
+    },
+    "vue-router-best-practices": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "computedHash": "31c030ca4fcafe466070a7a99bf5a658ed9133eefff20d6a9f7bc77ebe9c1287"
+    },
+    "web-design-guidelines": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "computedHash": "e1089d00a849545f12afda48a24d6ce25ce067c6ec6f2b63a76e8bd114acd6d1"
+    }
+  }
+}
