@@ -2,7 +2,12 @@
 
 import { usePreferences } from '@vben/preferences';
 
-import { themeQuartz, type Theme } from 'ag-grid-community';
+import {
+  themeQuartz,
+  type ColDef,
+  type GridOptions,
+  type Theme,
+} from 'ag-grid-community';
 
 // Shared base params for AG Grid theme.
 const baseTheme = {
@@ -213,14 +218,14 @@ export function useAgGridTheme() {
     createAgGridTheme(normalizedTheme.value),
   );
 
-  const defaultColDef = computed(() => ({
+  const defaultColDef = computed<ColDef>(() => ({
     filter: true,
     minWidth: 100,
     resizable: true,
     sortable: true,
   }));
 
-  const gridOptions = computed(() => ({
+  const gridOptions = computed<GridOptions>(() => ({
     animateRows: true,
     animationDuration: 200,
     enableCellTextSelection: true,

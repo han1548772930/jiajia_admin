@@ -20,6 +20,7 @@ const formState = reactive({ name: '' });
 const modalData = ref<GroupModalData | null>(null);
 
 const [Modal, modalApi] = useVbenModal({
+  draggable: true,
   async onConfirm() {
     try {
       await formRef.value?.validate();
@@ -83,7 +84,8 @@ const [Modal, modalApi] = useVbenModal({
 </script>
 
 <template>
-  <Modal :title="modalData?.mode === 'rename' ? '重命名分组' : '新增分组'" class="group-form-modal w-[400px]">
+  <Modal :title="modalData?.mode === 'rename' ? '重命名分组' : '新增分组'" class="group-form-modal w-[400px]"
+    contentClass="min-h-20">
     <Form ref="formRef" :model="formState" layout="vertical" :validate-trigger="[]">
       <FormItem label="分组名称" name="name" :rules="[{ required: true, message: '请输入分组名称' }]">
         <Input v-model:value="formState.name" placeholder="请输入分组名称" />

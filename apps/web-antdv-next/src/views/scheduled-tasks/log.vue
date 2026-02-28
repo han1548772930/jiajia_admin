@@ -3,14 +3,14 @@
     <div class="min-h-0 flex-1">
       <AgGridVue class="h-full w-full" :theme="currentAgGridTheme" :column-defs="columnDefs" :components="agComponents"
         :default-col-def="defaultColDef" :locale-text="AG_GRID_LOCALE_CN" :get-row-id="getRowId" :header-height="35"
-        detail-cell-renderer="logDetailCellRenderer" :detail-row-height="420" master-detail column-menu="legacy"
-        v-bind="gridOptions" @grid-ready="onGridReady" />
+        :row-data="logData" :loading="loading" :is-row-master="isRowMaster" detail-cell-renderer="logDetailCellRenderer"
+        :detail-row-height="420" master-detail v-bind="gridOptions" />
     </div>
   </Page>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef, watch } from 'vue';
+import { onMounted, ref, shallowRef } from 'vue';
 
 import { AG_GRID_LOCALE_CN } from '@ag-grid-community/locale';
 import { Page } from '@vben/common-ui';
@@ -19,8 +19,6 @@ import type {
   ColDef,
   GetRowIdFunc,
   GetRowIdParams,
-  GridApi,
-  GridReadyEvent,
 } from 'ag-grid-community';
 import { AgGridVue } from 'ag-grid-vue3';
 
@@ -33,19 +31,20 @@ import LogDetailCellRenderer from './components/LogDetailCellRenderer.vue';
 const taskLog = useTaskLogStore();
 const { currentAgGridTheme, defaultColDef, gridOptions } = useAgGridTheme();
 
-const logData = ref<TaskApi.AutoReportJobLog[]>([]);
-const gridApi = shallowRef<GridApi | null>(null);
+const logData = ref<(TaskApi.AutoReportJobLog & { __rowId: string })[]>([]);
 const { loading, run: runWithLoading } = useRequestLoading();
 const agComponents = {
   logDetailCellRenderer: LogDetailCellRenderer,
 };
+
+const isRowMaster = () => true;
 
 const detailCell = {
   cellRenderer: 'agGroupCellRenderer',
   cellRendererParams: { suppressCount: true },
 };
 
-const columnDefs = computed<ColDef[]>(() => [
+const columnDefs = shallowRef<ColDef[]>([
   { field: 'JobName', headerName: '任务名称', width: 200 },
   {
     field: 'Arguments',
@@ -78,32 +77,7 @@ const columnDefs = computed<ColDef[]>(() => [
 ]);
 
 const getRowId: GetRowIdFunc = (params: GetRowIdParams) =>
-  String(params.data.HfSetId);
-
-function scheduleGridUpdate(cb: () => void) {
-  setTimeout(() => {
-    if (gridApi.value) cb();
-  }, 0);
-}
-
-function syncGridData() {
-  if (!gridApi.value) return;
-
-  scheduleGridUpdate(() => {
-    gridApi.value!.setGridOption('rowData', logData.value);
-  });
-}
-
-function onGridReady(params: GridReadyEvent) {
-  gridApi.value = params.api;
-  params.api.setGridOption('isRowMaster', () => true);
-  params.api.setGridOption('loading', loading.value);
-  syncGridData();
-}
-
-watch(loading, (value) => {
-  gridApi.value?.setGridOption('loading', value);
-});
+  params.data.__rowId;
 
 async function fetchLogs() {
   const jobId = taskLog.jobId;
@@ -111,9 +85,11 @@ async function fetchLogs() {
 
   await runWithLoading(async () => {
     const res = await getJobLogsApi(jobId);
-
-    logData.value = res.Data;
-    syncGridData();
+    const rows = res.Data ?? [];
+    logData.value = rows.map((item) => ({
+      ...item,
+      __rowId: `${item.HfSetId}-${item.CreateAt}`,
+    }));
   });
 }
 

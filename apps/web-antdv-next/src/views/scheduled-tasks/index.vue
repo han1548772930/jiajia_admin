@@ -4,7 +4,7 @@
       <!-- 左侧树 -->
       <div class="w-60 shrink-0 border-r border-border flex flex-col h-full overflow-hidden">
         <div class="flex-1 overflow-y-auto p-2" @contextmenu.prevent="onTreeContainerRightClick">
-          <Tree v-model:expanded-keys="expandedKeys" v-model:selected-keys="selectedKeys" :tree-data="(treeData as any)"
+          <Tree v-model:expanded-keys="expandedKeys" v-model:selected-keys="selectedKeys" :tree-data="treeDataForTree"
             :field-names="{ title: 'Name', key: 'Sysid', children: 'children' }" block-node show-line draggable
             @drop="onTreeDrop" @select="onTreeSelect" @right-click="onTreeRightClick">
             <template #titleRender="{ Name, _jobCount, Sysid }">
@@ -12,9 +12,8 @@
                 <Input v-model:value="renamingName" class="w-[120px]" @press-enter="onRenameConfirm"
                   @blur="onRenameConfirm" @keydown.esc="onRenameCancel" />
               </div>
-              <span v-else class="inline-flex items-center gap-1">
-                <span>{{ Name }}</span>
-                <span v-if="_jobCount" class="text-muted-foreground text-xs">({{ _jobCount }})</span>
+              <span v-else class="inline-flex h-6 items-center gap-1 leading-none">
+                <span class="leading-none">{{ Name }} ({{ _jobCount }})</span>
               </span>
             </template>
           </Tree>
@@ -38,7 +37,7 @@
         <div class="flex-1 min-h-0 p-2">
           <AgGridVue class="w-full h-full" :theme="currentAgGridTheme" :column-defs="columnDefs"
             :default-col-def="defaultColDef" :locale-text="AG_GRID_LOCALE_CN" :get-row-id="getRowId" :header-height="35"
-            column-menu="legacy" v-bind="gridOptions" @grid-ready="onGridReady" />
+            :row-data="displayJobs" :loading="loading" v-bind="gridOptions" @grid-ready="onGridReady" />
         </div>
       </div>
     </div>
@@ -76,7 +75,14 @@ import {
 import { confirm, Page, useVbenModal } from '@vben/common-ui';
 import { AG_GRID_LOCALE_CN } from '@ag-grid-community/locale';
 import { AgGridVue } from 'ag-grid-vue3';
-import type { ColDef, GetRowIdFunc, GetRowIdParams, GridApi, GridReadyEvent } from 'ag-grid-community';
+import type {
+  ColDef,
+  GetRowIdFunc,
+  GetRowIdParams,
+  GridApi,
+  GridReadyEvent,
+  ValueFormatterParams,
+} from 'ag-grid-community';
 import dayjs from 'dayjs';
 
 import {
@@ -135,9 +141,19 @@ const selectedKeys = ref<number[]>([]);
 
 // AG Grid 列定义
 const columnDefs = computed<ColDef[]>(() => [
-  { field: 'JobName', headerName: `任务名称 (${displayJobs.value.length})`, width: 200 },
+  {
+    field: 'JobName',
+    headerValueGetter: () => `任务名称 (${displayJobs.value.length})`,
+    width: 200,
+  },
   { field: 'JobStatus', headerName: '任务状态', width: 120, cellRenderer: TableTag },
-  { field: 'JobType', headerName: '任务类型', width: 120, valueFormatter: (p: any) => getJobTypeLabel(p.data.JobType) },
+  {
+    field: 'JobType',
+    headerName: '任务类型',
+    width: 120,
+    valueFormatter: (p: ValueFormatterParams<TaskApi.JobData>) =>
+      getJobTypeLabel(p.data?.JobType ?? 0),
+  },
   { field: 'Param', headerName: '任务参数', width: 300, tooltipField: 'Param' },
   { field: 'Cron', headerName: 'Cron表达式', width: 200 },
   { field: 'CreateDate', headerName: '创建时间', width: 200 },
@@ -170,26 +186,36 @@ const columnDefs = computed<ColDef[]>(() => [
 
 const getRowId: GetRowIdFunc = (params: GetRowIdParams) => String(params.data.JobId);
 
-function scheduleGridUpdate(cb: () => void) {
-  setTimeout(() => {
-    if (gridApi.value) cb();
-  }, 0);
-}
+type TreeDropInfo = {
+  dragNode: { key: number | string };
+  node: { key: number | string };
+  dropToGap: boolean;
+};
 
-function syncGridData() {
-  if (!gridApi.value) return;
-  scheduleGridUpdate(() => {
-    gridApi.value!.setGridOption('rowData', displayJobs.value);
-  });
-}
+type TreeRightClickInfo = {
+  event: MouseEvent;
+  node: { key?: number | string; Sysid?: number };
+};
+
+type ContextMenuClickInfo = {
+  key: string;
+};
 
 function onGridReady(params: GridReadyEvent) {
   gridApi.value = params.api;
-  gridApi.value.setGridOption('loading', loading.value);
-  syncGridData();
+  params.api.refreshHeader();
 }
 
 const treeData = computed<GroupNode[]>(() => buildGroupTree(groups.value, allJobs.value));
+type TreeDataNode = GroupNode & { key: number; children?: TreeDataNode[] };
+const treeDataForTree = computed<TreeDataNode[]>(() => {
+  const mapNode = (node: GroupNode): TreeDataNode => ({
+    ...node,
+    key: node.Sysid,
+    children: node.children?.map(mapNode),
+  });
+  return treeData.value.map(mapNode);
+});
 
 // 获取数据
 async function fetchData() {
@@ -222,16 +248,11 @@ function updateDisplay() {
   }
   const kw = jobNameFilter.value?.trim();
   displayJobs.value = kw ? base.filter((j) => j.JobName?.includes(kw)) : base;
-  syncGridData();
 }
 
 watch([selectedKeys, jobNameFilter, allJobs], updateDisplay);
-
-watch(loading, (value) => {
-  if (!gridApi.value) return;
-  scheduleGridUpdate(() => {
-    gridApi.value!.setGridOption('loading', value);
-  });
+watch(displayJobs, () => {
+  gridApi.value?.refreshHeader();
 });
 
 function onTreeSelect(keys: (string | number)[]) {
@@ -240,7 +261,7 @@ function onTreeSelect(keys: (string | number)[]) {
 
 // 树拖拽
 const treeDrooping = ref(false);
-const onTreeDrop = async (info: any) => {
+const onTreeDrop = async (info: TreeDropInfo) => {
   if (treeDrooping.value) return;
   const dragId = info.dragNode.key as number;
   const dropId = info.node.key as number;
@@ -315,14 +336,15 @@ function closeContextMenu() {
   contextMenuVisible.value = false;
 }
 
-function onTreeRightClick({ event, node }: any) {
+function onTreeRightClick({ event, node }: TreeRightClickInfo) {
   event.preventDefault();
   event.stopPropagation();
   contextMenuVisible.value = false;
   nextTick(() => {
     activeContextMenuItems.value = nodeContextMenuItems;
     contextMenuPos.value = { x: event.clientX, y: event.clientY };
-    contextMenuNodeId.value = node.key ?? node.Sysid;
+    const nodeId = Number(node.key ?? node.Sysid ?? 0);
+    contextMenuNodeId.value = Number.isNaN(nodeId) ? 0 : nodeId;
     contextMenuVisible.value = true;
   });
 }
@@ -347,12 +369,12 @@ onBeforeUnmount(() => {
   document.removeEventListener('scroll', closeContextMenu, true);
 });
 
-function onContextMenuClick(e: any) {
+function onContextMenuClick(e: ContextMenuClickInfo) {
   contextMenuVisible.value = false;
   onContextMenu(e, contextMenuNodeId.value);
 }
 
-function onContextMenu(e: any, sysid: number) {
+function onContextMenu(e: ContextMenuClickInfo, sysid: number) {
   const key = e.key as string;
   if (key === 'addRootGroup') {
     groupModalApi.setData({ mode: 'add', parentId: 0, fetchData }).open();

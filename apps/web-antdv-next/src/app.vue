@@ -37,3 +37,9 @@ const tokenTheme = computed(() => {
     </App>
   </ConfigProvider>
 </template>
+<style>
+/* .ag-watermark {
+  z-index: 99999;
+  display: none;
+} */
+</style>

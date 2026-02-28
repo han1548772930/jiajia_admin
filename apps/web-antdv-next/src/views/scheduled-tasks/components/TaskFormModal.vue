@@ -168,7 +168,7 @@ async function onSubmitJob() {
             <FormItem label="Cron" name="jobState.cron"
               :rules="[{ required: taskForm.values.jobState.jobStatus, message: '请输入 Cron 表达式' }]" class="mb-4">
               <div class="flex gap-2">
-                <Input v-model:value="taskForm.values.jobState.cron" readonly />
+                <Input v-model:value="taskForm.values.jobState.cron" />
                 <Button @click="openCronModal">编辑</Button>
               </div>
             </FormItem>
