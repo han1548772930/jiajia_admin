@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "antdv-next": {
+      "source": "antdv-next/skills",
+      "sourceType": "github",
+      "computedHash": "0ea05bcefc6d2fba3221d62bcc0bee870b219521367ce79016ca5f5a4054f51b"
+    },
     "vite": {
       "source": "antfu/skills",
       "sourceType": "github",

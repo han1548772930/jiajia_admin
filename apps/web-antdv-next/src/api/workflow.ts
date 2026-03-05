@@ -1,14 +1,9 @@
+import type { ApiResponse as BaseApiResponse } from './types';
+
 import { requestClient } from '#/api/request';
 
 export namespace WorkflowApi {
-  export interface ApiResponse<T> {
-    Code: number;
-    Data: T;
-    Extras: null;
-    Message: string;
-    Success: boolean;
-    Timestamp: number;
-  }
+  export type ApiResponse<T = unknown> = BaseApiResponse<T>;
 
   export interface Category {
     Name: string;
@@ -188,6 +183,94 @@ export namespace WorkflowApi {
     Sysid: number;
     Tel: null | string;
   }
+
+  export interface OcapInstance {
+    ApprovalStatusEnum: null | number;
+    BadQty: null | number;
+    Code: string;
+    CreateDate: null | string;
+    CreatorId: null | number;
+    CurrNodeId: null | number;
+    CustCode: null | string;
+    CustName: null | string;
+    EditTime: null | string;
+    EditorId: null | number;
+    EqpCode: null | string;
+    EqpId: null | number;
+    EqpName: null | string;
+    Lot: null | string;
+    LotId: null | number;
+    Name: string;
+    PddId: null | number;
+    PoId: null | number;
+    ProcessCode: null | string;
+    ProcessId: null | number;
+    ProcessName: null | string;
+    Qty: null | number;
+    Remark: null | string;
+    Result: null | string;
+    StepCode: null | string;
+    StepId: null | number;
+    StepName: null | string;
+    Sysid: number;
+    WoCode: null | string;
+    WoId: null | number;
+    Finish: boolean;
+  }
+
+  export interface OcapInstanceNode {
+    Finish: boolean;
+    NodeCode: string;
+    NodeId: number;
+    NodeName: string;
+    OcapId: number;
+    ProcessId: number;
+    Seq: number;
+    Sysid: number;
+  }
+
+  export interface OcapInstanceNodeValue {
+    Caption: string;
+    ControlItem: null | string;
+    ControlType: string;
+    Default: null | string;
+    FieldId: number;
+    FieldName: string;
+    FieldType: string;
+    FieldValue: boolean | null | number | string;
+    Length: number;
+    NodeId: number;
+    OcapId: number;
+    ProcessId: number;
+    ReadOnly: number;
+    Seq: number;
+    Sysid: number;
+    ValidateRules: null | string;
+  }
+
+  export interface OcapInstanceDetail {
+    OcapInstanceNodeValueVs: OcapInstanceNodeValue[];
+    OcapInstanceNodeVs: OcapInstanceNode[];
+    OcapInstanceV: OcapInstance;
+  }
+
+  export interface OcapInstanceEditNodeValue {
+    FieldId: number;
+    FieldValue: string;
+  }
+
+  export interface OcapInstanceEditPayload {
+    InstanceId: number;
+    NodeId: number;
+    NodeValues: OcapInstanceEditNodeValue[];
+    ProcessId: number;
+  }
+
+  export interface OcapInstanceJumpPayload {
+    InstanceId: number;
+    NodeId: number;
+    ProcessId: number;
+  }
 }
 
 export enum WorkflowVerifyResult {
@@ -345,4 +428,31 @@ export async function getUsersByDeptApi(deptId: number) {
   return requestClient.get<WorkflowApi.ApiResponse<WorkflowApi.DepartmentUser[]>>(
     `/sys-user/get-user-by-dept/${deptId}`,
   );
+}
+
+export async function getOcapInstanceDetailApi(ocapId: number) {
+  return requestClient.get<WorkflowApi.ApiResponse<WorkflowApi.OcapInstanceDetail>>(
+    `/ocap-instance/query-single/${ocapId}`,
+    {
+      responseReturn: 'body',
+    },
+  );
+}
+
+export async function editOcapInstanceApi(data: WorkflowApi.OcapInstanceEditPayload) {
+  return requestClient.post<WorkflowApi.ApiResponse<null>>('/ocap-instance/edit', data, {
+    responseReturn: 'body',
+  });
+}
+
+export async function jumpLastOcapInstanceNodeApi(data: WorkflowApi.OcapInstanceJumpPayload) {
+  return requestClient.post<WorkflowApi.ApiResponse<null>>('/ocap-instance/jump-last-node', data, {
+    responseReturn: 'body',
+  });
+}
+
+export async function jumpOcapInstanceNodeByIdApi(data: WorkflowApi.OcapInstanceJumpPayload) {
+  return requestClient.post<WorkflowApi.ApiResponse<null>>('/ocap-instance/jump-by-node-id', data, {
+    responseReturn: 'body',
+  });
 }

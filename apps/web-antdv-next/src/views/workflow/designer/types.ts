@@ -1,3 +1,4 @@
+import type { ApiResponse } from '#/api/types';
 import type { WorkflowApi } from '#/api/workflow';
 
 export type Category = WorkflowApi.Category;
@@ -6,14 +7,7 @@ export type NodeUsersDetail = WorkflowApi.NodeUserDetail;
 export type TemplateField = WorkflowApi.TemplateField;
 export type TemplateData = WorkflowApi.TemplateDetail;
 
-export interface Response<T> {
-  Code: number;
-  Data: T;
-  Extras: null;
-  Message: string;
-  Success: boolean;
-  Timestamp: number;
-}
+export type Response<T> = ApiResponse<T>;
 
 export interface FormState {
   auditServiceName?: string;
