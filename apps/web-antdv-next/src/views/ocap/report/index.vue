@@ -5,13 +5,13 @@ import { useRoute } from 'vue-router';
 import { Page } from '@vben/common-ui';
 import { Card, Empty, Form, FormItem, Input, message } from 'antdv-next';
 
-import { getOcapInstanceDetailApi, type WorkflowApi } from '#/api/workflow';
+import { getOcapInstanceDetailApi, type OcapApi } from '#/api/ocap';
 import { useRequestLoading } from '#/composables/useRequestLoading';
 
 const route = useRoute();
 const { loading, run: runWithLoading } = useRequestLoading();
 
-const detail = ref<null | WorkflowApi.OcapInstanceDetail>(null);
+const detail = ref<null | OcapApi.OcapInstanceDetail>(null);
 const formModel = ref<Record<string, any>>({});
 
 const sortedNodes = computed(() =>
@@ -59,7 +59,7 @@ const summaryItems = computed(() => {
   ];
 });
 
-function fieldKey(field: WorkflowApi.OcapInstanceNodeValue) {
+function fieldKey(field: OcapApi.OcapInstanceNodeValue) {
   return `field_${field.Sysid}`;
 }
 
@@ -111,6 +111,7 @@ watch(() => route.params.ocapId, loadData);
             <div>发起人：{{ initiator }}</div>
             <div>时间：{{ happenTime }}</div>
           </div>
+
 
           <Form class="mt-3" layout="horizontal" :wrapper-col="{ style: { flex: 1 } }">
             <div class="grid grid-cols-1 gap-x-4 md:grid-cols-2 xl:grid-cols-3">

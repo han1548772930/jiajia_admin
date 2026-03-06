@@ -1,18 +1,19 @@
 /**
  * User API — 根据构建目标自动切换实现
- * admin     → user.admin.ts  （模拟）
- * dashboard / b2b / workflow → user.default.ts（真实接口）
+ * admin / b2b / workflow / ocap / dashboard → 对应实现
  */
-import * as adminUser from './user.admin';
-import * as b2bUser from './user.b2b';
-import * as defaultUser from './user.default';
+import * as adminUser from './admin';
+import * as b2bUser from './b2b';
+import * as defaultUser from './default';
+import * as ocapUser from './ocap';
+import * as workflowUser from './workflow';
 
-// 根据构建目标选择实现，新增 target 时在此添加即可
 const userMap: Record<string, typeof defaultUser> = {
   admin: adminUser,
   b2b: b2bUser,
   dashboard: defaultUser,
-  workflow: adminUser,
+  ocap: ocapUser,
+  workflow: workflowUser,
 };
 
 const target = import.meta.env.VITE_APP_TARGET || 'admin';

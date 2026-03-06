@@ -13,6 +13,7 @@ const sharedRouteFiles = import.meta.glob('./modules/*.ts', {
 const targetRouteFiles: Record<string, Record<string, unknown>> = {
   admin: import.meta.glob('./modules/admin/**/*.ts', { eager: true }),
   workflow: import.meta.glob('./modules/workflow/**/*.ts', { eager: true }),
+  ocap: import.meta.glob('./modules/ocap/**/*.ts', { eager: true }),
   b2b: import.meta.glob('./modules/b2b/**/*.ts', { eager: true }),
   dashboard: import.meta.glob('./modules/dashboard/**/*.ts', { eager: true }),
 };

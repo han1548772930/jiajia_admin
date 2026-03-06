@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { loginApi } from '#/api/core/auth.workflow';
+import { loginApi } from '#/api/core/auth/workflow';
 import {
   createTemplateApi,
   getAllMenusApi,

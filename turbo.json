@@ -35,6 +35,10 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "build:antdv-next:ocap": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
     "build:analyze": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]

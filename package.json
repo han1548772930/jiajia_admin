@@ -29,6 +29,7 @@
     "build:analyze": "turbo build:analyze",
     "build:antdv-next:admin": "turbo build:antdv-next:admin --filter=@vben/web-antdv-next",
     "build:antdv-next:workflow": "turbo build:antdv-next:workflow --filter=@vben/web-antdv-next",
+    "build:antdv-next:ocap": "turbo build:antdv-next:ocap --filter=@vben/web-antdv-next",
     "build:antd": "pnpm run build --filter=@vben/web-antd",
     "build:docker": "./scripts/deploy/build-local-docker-image.sh",
     "build:docs": "pnpm run build --filter=@vben/docs",

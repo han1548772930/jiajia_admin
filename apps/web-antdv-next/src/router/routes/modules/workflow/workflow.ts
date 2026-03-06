@@ -46,29 +46,10 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          title: '异常列表',
-        },
-        name: 'WorkflowOcapExceptionList',
-        path: '/ocap/:ocapId',
-        alias: '/workflow/ocap/:ocapId',
-        component: () => import('#/views/workflow/ocap-exception-list/index.vue'),
-      },
-      {
-        meta: {
-          title: '异常处理报告',
-          hideInMenu: true,
-        },
-        name: 'WorkflowOcapReport',
-        path: '/ocap/report/:ocapId',
-        alias: '/workflow/ocap/report/:ocapId',
-        component: () => import('#/views/workflow/ocap-report/index.vue'),
-      },
-      {
-        meta: {
           hideInMenu: true,
           title: '模板设计',
         },
-       
+
         name: 'WorkflowTemplateDesigner',
         path: '/workflow/designer/basic-information',
         component: () =>

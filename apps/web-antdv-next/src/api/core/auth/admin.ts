@@ -12,10 +12,7 @@ export async function loginApi(data: { password?: string; username?: string }) {
 export async function refreshTokenApi() {
   console.log('🔄 Mock Refresh Token');
   return new Promise<{ data: string; status: number }>((resolve) => {
-    setTimeout(
-      () => resolve({ data: `mock-refresh-token-${Date.now()}`, status: 200 }),
-      300,
-    );
+    setTimeout(() => resolve({ data: `mock-refresh-token-${Date.now()}`, status: 200 }), 300);
   });
 }
 
@@ -26,10 +23,5 @@ export async function logoutApi() {
 
 export async function getAccessCodesApi() {
   console.log('🔑 Mock Access Codes');
-  return Promise.resolve([
-    'AC_100100',
-    'AC_100110',
-    'AC_100120',
-    'AC_100010',
-  ]);
+  return Promise.resolve(['AC_100100', 'AC_100110', 'AC_100120', 'AC_100010']);
 }

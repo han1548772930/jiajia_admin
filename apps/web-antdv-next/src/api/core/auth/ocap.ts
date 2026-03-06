@@ -41,10 +41,9 @@ export async function loginApi(data: { password?: string; username?: string }) {
 }
 
 export async function refreshTokenApi() {
-  return baseRequestClient.post<{ data: string; status: number }>(
-    '/auth/refresh',
-    { withCredentials: true },
-  );
+  return baseRequestClient.post<{ data: string; status: number }>('/auth/refresh', {
+    withCredentials: true,
+  });
 }
 
 export async function logoutApi() {

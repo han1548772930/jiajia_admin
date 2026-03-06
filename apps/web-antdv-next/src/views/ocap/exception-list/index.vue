@@ -6,6 +6,7 @@ import { Page, useVbenModal } from '@vben/common-ui';
 import {
   Button,
   Card,
+  CheckboxGroup,
   DatePicker,
   Empty,
   Form,
@@ -22,10 +23,11 @@ import {
 import {
   editOcapInstanceApi,
   getOcapInstanceDetailApi,
+  getOcapNodeDetailApi,
   jumpLastOcapInstanceNodeApi,
   jumpOcapInstanceNodeByIdApi,
-  type WorkflowApi,
-} from '#/api/workflow';
+  type OcapApi,
+} from '#/api/ocap';
 import { useRequestLoading } from '#/composables/useRequestLoading';
 
 const route = useRoute();
@@ -33,12 +35,14 @@ const router = useRouter();
 const { loading, run: runWithLoading } = useRequestLoading();
 const { loading: actionLoading, run: runWithActionLoading } = useRequestLoading();
 
-const detail = ref<null | WorkflowApi.OcapInstanceDetail>(null);
+const detail = ref<null | OcapApi.OcapInstanceDetail>(null);
 const formRef = ref<any>();
 const formModel = ref<Record<string, any>>({});
 const defaultModel = ref<Record<string, any>>({});
 const currentStep = ref(0);
 const currentProcessingStep = ref(0);
+const currentNodeDetail = ref<null | OcapApi.OcapNodeDetail>(null);
+const selectedNodeUserIds = ref<number[]>([]);
 
 const sortedNodes = computed(() =>
   [...(detail.value?.OcapInstanceNodeVs ?? [])].sort((a, b) => a.Seq - b.Seq),
@@ -52,7 +56,7 @@ const groupedNodes = computed(() => {
   }));
 });
 
-function isNodeFinished(node: WorkflowApi.OcapInstanceNode) {
+function isNodeFinished(node: OcapApi.OcapInstanceNode) {
   return node.Finish === true;
 }
 
@@ -78,6 +82,29 @@ const previousNodeOptions = computed(() =>
       label: `${group.node.Seq}. ${group.node.NodeName || '未命名节点'}`,
       value: group.node.NodeId,
     })),
+);
+
+const currentNodeUserOptions = computed(() =>
+  (currentNodeDetail.value?.NodeUserList ?? []).map((item) => ({
+    label: `${item.UserName}（${item.UserCode}）`,
+    value: item.UserId,
+  })),
+);
+
+const processedNodeUsers = computed(() => {
+  const group = currentGroup.value;
+  if (!group || isEditingCurrentNode.value) return [];
+
+  return (detail.value?.OcapInstanceNodeUserVs ?? [])
+    .filter((item) => item.NodeId === group.node.NodeId)
+    .map((item) => ({
+      label: `${item.UserName}（${item.UserCode}）`,
+      value: item.UserId,
+    }));
+});
+
+const isEditingCurrentNode = computed(
+  () => hasProcessingNode.value && currentStep.value === currentProcessingStep.value,
 );
 
 const [JumpLastModal, jumpLastModalApi] = useVbenModal({
@@ -122,11 +149,11 @@ const [RejectNodeModal, rejectNodeModalApi] = useVbenModal({
   },
 });
 
-function fieldKey(field: WorkflowApi.OcapInstanceNodeValue) {
+function fieldKey(field: OcapApi.OcapInstanceNodeValue) {
   return `field_${field.Sysid}`;
 }
 
-function getRadioOptions(field: WorkflowApi.OcapInstanceNodeValue) {
+function getRadioOptions(field: OcapApi.OcapInstanceNodeValue) {
   return (field.ControlItem ?? '')
     .split('|')
     .map((item) => item.trim())
@@ -134,7 +161,7 @@ function getRadioOptions(field: WorkflowApi.OcapInstanceNodeValue) {
     .map((item) => ({ label: item, value: item }));
 }
 
-function parseFieldValue(field: WorkflowApi.OcapInstanceNodeValue, raw: any) {
+function parseFieldValue(field: OcapApi.OcapInstanceNodeValue, raw: any) {
   if (field.ControlType === 'RadioGroup') {
     return raw == null || raw === '' ? undefined : String(raw);
   }
@@ -144,15 +171,15 @@ function parseFieldValue(field: WorkflowApi.OcapInstanceNodeValue, raw: any) {
   return raw == null ? undefined : raw;
 }
 
-function getInitialFieldValue(field: WorkflowApi.OcapInstanceNodeValue) {
+function getInitialFieldValue(field: OcapApi.OcapInstanceNodeValue) {
   return parseFieldValue(field, field.FieldValue ?? field.Default);
 }
 
-function getDefaultFieldValue(field: WorkflowApi.OcapInstanceNodeValue) {
+function getDefaultFieldValue(field: OcapApi.OcapInstanceNodeValue) {
   return parseFieldValue(field, field.Default);
 }
 
-function getValidateRules(field: WorkflowApi.OcapInstanceNodeValue) {
+function getValidateRules(field: OcapApi.OcapInstanceNodeValue) {
   const requiredRule = {
     required: true,
     trigger: ['blur', 'change'],
@@ -190,6 +217,7 @@ function resolveOcapId() {
 
 function resetToDefault() {
   formModel.value = { ...defaultModel.value };
+  selectedNodeUserIds.value = [];
 }
 
 function handleStepChange(idx: number) {
@@ -202,7 +230,7 @@ function isEditingCurrentProcessingNode() {
   return currentStep.value === currentProcessingStep.value;
 }
 
-function isFieldDisabled(field: WorkflowApi.OcapInstanceNodeValue) {
+function isFieldDisabled(field: OcapApi.OcapInstanceNodeValue) {
   return field.ReadOnly === 1 || !isEditingCurrentProcessingNode();
 }
 
@@ -211,12 +239,12 @@ function normalizeFieldValue(value: unknown) {
   return String(value);
 }
 
-function isLastNode(node: WorkflowApi.OcapInstanceNode | undefined) {
+function isLastNode(node: OcapApi.OcapInstanceNode | undefined) {
   if (!node) return false;
   return groupedNodes.value[groupedNodes.value.length - 1]?.node.NodeId === node.NodeId;
 }
 
-function buildJumpPayload(nodeId: number): null | WorkflowApi.OcapInstanceJumpPayload {
+function buildJumpPayload(nodeId: number): null | OcapApi.OcapInstanceJumpPayload {
   const instance = detail.value?.OcapInstanceV;
   const processingGroup = currentProcessingGroup.value;
   if (!instance || !processingGroup) return null;
@@ -228,13 +256,30 @@ function buildJumpPayload(nodeId: number): null | WorkflowApi.OcapInstanceJumpPa
   };
 }
 
+async function loadCurrentNodeDetail() {
+  const group = currentGroup.value;
+  if (!group) {
+    currentNodeDetail.value = null;
+    selectedNodeUserIds.value = [];
+    return;
+  }
+
+  const res = await getOcapNodeDetailApi(group.node.NodeId);
+  if (!res.Success) {
+    currentNodeDetail.value = null;
+    selectedNodeUserIds.value = [];
+    return void message.error(res.Message || '加载当前节点信息失败');
+  }
+
+  currentNodeDetail.value = res.Data ?? null;
+  selectedNodeUserIds.value = [];
+}
+
 async function jumpToNode(nodeId: number) {
   const payload = buildJumpPayload(nodeId);
   if (!payload) return;
 
-
   await runWithActionLoading(async () => {
-
     const res = await jumpOcapInstanceNodeByIdApi(payload);
     if (!res.Success) return void message.error(res.Message || '驳回失败');
     message.success('驳回成功');
@@ -251,15 +296,15 @@ async function jumpToLastStep() {
 
   await runWithActionLoading(async () => {
     const res = await jumpLastOcapInstanceNodeApi(payload);
-    if (!res.Success) return void message.error(res.Message || '收回失败');
-    message.success('收回成功');
+    if (!res.Success) return void message.error(res.Message || '退回失败');
+    message.success('退回成功');
     await loadData();
   }, { rethrow: false });
 }
 
 function openJumpLastModal() {
   if (currentProcessingStep.value <= 0) {
-    return void message.warning('当前已是首节点，无法收回');
+    return void message.warning('当前已是首节点，无法退回');
   }
   jumpLastModalApi.open();
 }
@@ -281,15 +326,23 @@ async function submitForm() {
     return void message.warning('仅可提交当前进行中的节点');
   }
 
+  if (!selectedNodeUserIds.value.length) {
+    return void message.warning('请选择当前节点处理人');
+  }
+
   const shouldGoReport = isLastNode(group.node);
 
   await runWithActionLoading(async () => {
     await formRef.value?.validate?.();
 
-    const payload: WorkflowApi.OcapInstanceEditPayload = {
+    const payload: OcapApi.OcapInstanceEditPayload = {
       InstanceId: instance.Sysid,
       ProcessId: group.node.ProcessId,
       NodeId: group.node.NodeId,
+      NodeUsers: selectedNodeUserIds.value.map((userId) => ({
+        NodeId: group.node.NodeId,
+        UserId: userId,
+      })),
       NodeValues: group.fields.map((field) => ({
         FieldId: field.FieldId,
         FieldValue: normalizeFieldValue(formModel.value[fieldKey(field)]),
@@ -355,11 +408,15 @@ async function loadData() {
 
     currentProcessingStep.value = idx;
     currentStep.value = currentProcessingStep.value;
+    await loadCurrentNodeDetail();
   }, { rethrow: false });
 }
 
 onMounted(loadData);
 watch(() => route.params.ocapId, loadData);
+watch(currentStep, async () => {
+  await loadCurrentNodeDetail();
+});
 </script>
 
 <template>
@@ -405,10 +462,28 @@ watch(() => route.params.ocapId, loadData);
         </Form>
       </div>
 
+      <div v-if="!isEditingCurrentNode && processedNodeUsers.length" class="mt-4 shrink-0 rounded border p-3">
+        <Form layout="horizontal" :wrapper-col="{ style: { flex: 1 } }" class="w-full">
+          <FormItem label="已处理节点处理人">
+            <CheckboxGroup :value="processedNodeUsers.map((item) => item.value)" :options="processedNodeUsers"
+              disabled />
+          </FormItem>
+        </Form>
+      </div>
+
+      <div v-if="hasProcessingNode && currentStep === currentProcessingStep" class="mt-4 shrink-0 rounded border p-3">
+        <Form layout="horizontal" :wrapper-col="{ style: { flex: 1 } }" class="w-full">
+          <FormItem label="下一节点处理人" name="nodeUsers" required>
+            <CheckboxGroup v-model:value="selectedNodeUserIds" :options="currentNodeUserOptions"
+              :disabled="!isEditingCurrentNode" />
+          </FormItem>
+        </Form>
+      </div>
+
       <div v-if="hasProcessingNode && currentStep === currentProcessingStep"
         class="mt-4 flex shrink-0 items-end justify-start gap-2">
         <Button :loading="actionLoading" :disabled="currentProcessingStep <= 0"
-          @click="openJumpLastModal">收回至上一步</Button>
+          @click="openJumpLastModal">退回至上一步</Button>
         <Button :loading="actionLoading" :disabled="currentProcessingStep <= 0" danger
           @click="openRejectNodeModal">驳回指定节点</Button>
         <Button :loading="actionLoading" type="primary" @click="submitForm">提交</Button>
@@ -436,7 +511,6 @@ watch(() => route.params.ocapId, loadData);
           </FormItem>
         </Form>
       </RejectNodeModal>
-
     </Card>
   </Page>
 </template>

@@ -5,6 +5,7 @@ import { loadEnv } from 'vite';
 const targetConfig: Record<string, { base: string; outDir: string }> = {
   admin: { base: '/admin', outDir: './dist/admin' },
   workflow: { base: '/workflow', outDir: './dist/workflow' },
+  ocap: { base: '/ocap', outDir: './dist/ocap' },
   dashboard: { base: '/dashboard', outDir: './dist/dashboard' },
   b2b: { base: '/b2b', outDir: './dist/b2b' },
 };

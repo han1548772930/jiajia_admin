@@ -19,10 +19,12 @@
     "build": "pnpm vite build --mode production",
     "build:antdv-next:admin": "cross-env VITE_APP_TARGET=admin pnpm vite build --mode production",
     "build:antdv-next:workflow": "cross-env VITE_APP_TARGET=workflow pnpm vite build --mode production",
+    "build:antdv-next:ocap": "cross-env VITE_APP_TARGET=ocap pnpm vite build --mode production",
     "build:b2b": "cross-env VITE_APP_TARGET=b2b pnpm vite build --mode production",
     "build:dashboard": "cross-env VITE_APP_TARGET=dashboard pnpm vite build --mode production",
-    "build:analyze": "pnpm vite build --mode analyze",
     "dev": "pnpm vite --mode development",
+    "dev:ocap": "cross-env VITE_APP_TARGET=ocap pnpm vite --mode development",
+    "build:analyze": "pnpm vite build --mode analyze",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit --skipLibCheck"
   },

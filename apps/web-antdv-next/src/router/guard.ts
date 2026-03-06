@@ -10,6 +10,39 @@ import { useAuthStore } from '#/store';
 
 import { generateAccess } from './access';
 
+interface WebViewAccessCache {
+  accessToken?: null | string;
+}
+
+function tryRestoreAccessTokenFromLocal() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const accessStore = useAccessStore();
+  if (accessStore.accessToken) {
+    return accessStore.accessToken;
+  }
+
+  const cacheKey = `${import.meta.env.VITE_APP_NAMESPACE}-prod-core-access`;
+  const raw = window.localStorage.getItem(cacheKey);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as WebViewAccessCache;
+    const token = parsed?.accessToken;
+    if (!token) {
+      return null;
+    }
+    accessStore.setAccessToken(token);
+    return token;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 通用守卫配置
  * @param router
@@ -49,6 +82,8 @@ function setupAccessGuard(router: Router) {
     const accessStore = useAccessStore();
     const userStore = useUserStore();
     const authStore = useAuthStore();
+
+    tryRestoreAccessTokenFromLocal();
 
     // 基本路由，这些路由不需要进入权限拦截
     if (coreRouteNames.includes(to.name as string)) {
