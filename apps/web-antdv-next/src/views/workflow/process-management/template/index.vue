@@ -2,8 +2,8 @@
 import { computed, ref, shallowRef } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { confirm, Page, useVbenModal } from '@vben/common-ui';
-import { Button, Card, Collapse, Input, Spin, Table, Tag, message } from 'antdv-next';
+import { Page, useVbenModal } from '@vben/common-ui';
+import { Button, Card, Collapse, Input, Modal, Spin, Table, Tag, message } from 'antdv-next';
 
 import {
   getAllDepartmentsApi,
@@ -36,6 +36,7 @@ const expandedCategoryIds = ref<string[]>([]);
 const [CategoryFormModal, categoryFormModalApi] = useVbenModal({
   connectedComponent: CategoryFormModalComp,
 });
+const [actionModalApi, ActionModalContextHolder] = Modal.useModal();
 
 const columns = [
   { dataIndex: 'Name', key: 'Name', title: '模板名称', width: 260 },
@@ -268,46 +269,42 @@ async function openTemplateEditor(mode: 'copy' | 'edit', item: WorkflowApi.Templ
   });
 }
 
-function removeTemplate(item: WorkflowApi.TemplateItem) {
-  confirm({
+async function removeTemplate(item: WorkflowApi.TemplateItem) {
+  await actionModalApi.confirm({
     content: `确认删除模板“${item.Name}”？`,
-    icon: 'question',
-    async beforeClose({ isConfirm }) {
-      if (!isConfirm) return true;
-      return await runWithLoading(async () => {
+    title: '删除模板',
+    async onOk() {
+      await runWithLoading(async () => {
         const res = await deleteTemplateApi(item.Sysid);
         if (!res.Success) {
           message.error(res.Message || '删除模板失败');
-          return false;
+          throw new Error(res.Message || '删除模板失败');
         }
         message.success('删除模板成功');
         await loadData();
-        return true;
       });
     },
   });
 }
 
-function removeCategory(item: WorkflowApi.Category, templateCount: number) {
+async function removeCategory(item: WorkflowApi.Category, templateCount: number) {
   if (templateCount > 0) {
     message.error('该分类下存在模板，不能删除');
     return;
   }
 
-  confirm({
+  await actionModalApi.confirm({
     content: `确认删除分类“${item.Name}”？`,
-    icon: 'question',
-    async beforeClose({ isConfirm }) {
-      if (!isConfirm) return true;
-      return await runWithLoading(async () => {
+    title: '删除分组',
+    async onOk() {
+      await runWithLoading(async () => {
         const res = await deleteCategoryApi(item.Sysid);
         if (!res.Success) {
           message.error(res.Message || '删除分类失败');
-          return false;
+          throw new Error(res.Message || '删除分类失败');
         }
         message.success('删除分类成功');
         await loadData();
-        return true;
       });
     },
   });
@@ -379,5 +376,6 @@ loadData();
     </div>
 
     <CategoryFormModal />
+    <ActionModalContextHolder />
   </Page>
 </template>
