@@ -2,12 +2,13 @@
 .SYNOPSIS
     Sync vue-vben-admin upstream code
 .DESCRIPTION
-    Strategy (no sparse-checkout, safe):
+    Strategy (safe, true ignore):
       1. git fetch + git merge --no-commit
-      2. Remove unneeded upstream modules (web-antd, web-ele, etc.)
-      3. Restore apps/web-antdv-next to local version (keep all our code)
+      2. Ignore unneeded modules (web-antd, web-ele, etc.) via git reset
+      3. Ignore apps/web-antdv-next changes - keep all local code
       4. Framework core (packages, internal, etc.) merged normally
       5. Show remaining conflicts for manual resolution
+    Ignored paths are completely excluded from the merge commit.
 .PARAMETER Branch
     Upstream branch or tag, default main
 .PARAMETER DryRun
@@ -34,17 +35,13 @@ if (-not $GIT_ROOT) {
 }
 Set-Location $GIT_ROOT
 
-# Upstream dirs to DELETE after merge (not used in your project)
-$REMOVE_DIRS = @(
+# All paths to IGNORE during merge (changes in these paths won't appear in commit)
+$IGNORE_PATHS = @(
     "apps/web-antd",
     "apps/web-ele",
     "apps/web-naive",
     "apps/web-tdesign",
-    "playground"
-)
-
-# Local dirs to KEEP as-is (restore to pre-merge state after merge)
-$KEEP_LOCAL = @(
+    "playground",
     "apps/web-antdv-next"
 )
 
@@ -88,9 +85,8 @@ if ($DryRun) {
     Write-Host "    1. git fetch origin $Branch"
     Write-Host "    2. Create backup branch"
     Write-Host "    3. git merge --no-commit origin/$Branch"
-    Write-Host "    4. Remove: $($REMOVE_DIRS -join ', ')"
-    Write-Host "    5. Restore local: $($KEEP_LOCAL -join ', ')"
-    Write-Host "    6. Commit merge"
+    Write-Host "    4. Ignore paths: $($IGNORE_PATHS -join ', ')"
+    Write-Host "    5. Commit merge"
     Write-Host ""
     Write-Host "  Run without -DryRun to execute" -ForegroundColor Yellow
     exit 0
@@ -128,28 +124,27 @@ Write-Host "  Merging origin/$Branch (--no-commit) ..." -ForegroundColor Gray
 git merge --no-commit "origin/$Branch" 2>&1 | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
 $mergeCode = $LASTEXITCODE
 
-# ---- Step 4: Clean up unwanted dirs + restore local ----
+# ---- Step 4: Ignore unwanted paths (completely exclude from commit) ----
 Write-Host ""
-Write-Host "--- Step 4/5: Remove unwanted dirs, restore local code ---" -ForegroundColor Cyan
+Write-Host "--- Step 4/5: Ignore excluded paths ---" -ForegroundColor Cyan
 
-# Remove dirs that our project doesn't use
-foreach ($dir in $REMOVE_DIRS) {
-    if (Test-Path (Join-Path $GIT_ROOT $dir)) {
-        git rm -rf --quiet -- $dir 2>$null
-        Write-Host "  [DEL] $dir" -ForegroundColor Yellow
-    }
+$oldEAP = $ErrorActionPreference
+$ErrorActionPreference = "SilentlyContinue"
+
+foreach ($p in $IGNORE_PATHS) {
+    # 1) Reset index: undo all staged changes for this path
+    git reset HEAD -- $p 2>&1 | Out-Null
+
+    # 2) Restore files that existed before merge to their original state
+    git checkout -- $p 2>&1 | Out-Null
+
+    # 3) Remove any NEW files that upstream added (not tracked before merge)
+    git clean -fd -- $p 2>&1 | Out-Null
+
+    Write-Host "  [SKIP] $p -> ignored (excluded from merge)" -ForegroundColor DarkGray
 }
 
-# Restore local dirs to pre-merge state (keep ALL our code)
-foreach ($local in $KEEP_LOCAL) {
-    git checkout HEAD -- $local 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        git add -- $local 2>$null
-        Write-Host "  [KEEP] $local -> restored to local version" -ForegroundColor Green
-    } else {
-        Write-Host "  [WARN] Could not restore $local, may need manual resolve" -ForegroundColor Yellow
-    }
-}
+$ErrorActionPreference = $oldEAP
 
 # ---- Step 5: Check conflicts and commit ----
 Write-Host ""
@@ -175,8 +170,12 @@ if ($remaining) {
 
 # Summary
 Write-Host ""
-$newPkg = Get-Content (Join-Path $GIT_ROOT "package.json") -Raw | ConvertFrom-Json
-Write-Host "  Version: v$($pkg.version) -> v$($newPkg.version)" -ForegroundColor White
+try {
+    $newPkg = Get-Content (Join-Path $GIT_ROOT "package.json") -Raw | ConvertFrom-Json
+    Write-Host "  Version: v$($pkg.version) -> v$($newPkg.version)" -ForegroundColor White
+} catch {
+    Write-Host "  Version: v$($pkg.version) -> (package.json has conflicts, resolve first)" -ForegroundColor Yellow
+}
 Write-Host "  [TIP] Run: pnpm install" -ForegroundColor Yellow
 if ($bak) {
     Write-Host "  [TIP] Rollback: git reset --hard $bak" -ForegroundColor Yellow
