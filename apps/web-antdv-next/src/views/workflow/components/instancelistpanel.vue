@@ -116,35 +116,14 @@ loadData();
     <div class="flex h-full flex-col gap-3">
       <Card>
         <div class="flex flex-wrap items-center gap-3">
-          <Input
-            v-model:value="processNameTemp"
-            allow-clear
-            class="w-[320px]"
-            placeholder="流程名称"
-            @press-enter="handleSearch"
-          />
-          <Select
-            v-model:value="selectedCategory"
-            allow-clear
-            show-search
-            class="w-[220px]"
-            placeholder="流程分类"
-            :options="categoryOptions"
-          />
-          <Select
-            v-model:value="selectedBillCode"
-            allow-clear
-            show-search
-            class="w-[220px]"
-            placeholder="业务单据号"
-            :options="billCodeOptions"
-          />
+          <Input v-model:value="processNameTemp" allow-clear :style="{ width: '320px' }" placeholder="流程名称"
+            @press-enter="handleSearch" />
+          <Select v-model:value="selectedCategory" allow-clear show-search class="w-[220px]" placeholder="流程分类"
+            :options="categoryOptions" />
+          <Select v-model:value="selectedBillCode" allow-clear show-search class="w-[220px]" placeholder="业务单据号"
+            :options="billCodeOptions" />
           <div class="flex items-center">
-            <Switch
-              v-model:checked="showDeleted"
-              checked-children="显示已反审"
-              un-checked-children="不显示已反审"
-            />
+            <Switch v-model:checked="showDeleted" checked-children="显示已反审" un-checked-children="不显示已反审" />
           </div>
           <div class="flex items-center">
             <Button @click="handleReset">重置</Button>
@@ -157,14 +136,8 @@ loadData();
       </Card>
 
       <Card :title="pageTitle" class="flex-1">
-        <Table
-          size="small"
-          row-key="Sysid"
-          :columns="columns as any"
-          :data-source="filteredItems"
-          :loading="loading"
-          :scroll="{ x: 1300 }"
-        >
+        <Table size="small" row-key="Sysid" :columns="columns as any" :data-source="filteredItems" :loading="loading"
+          :scroll="{ x: 1300 }">
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'Status'">
               <div class="flex items-center gap-2">

@@ -318,7 +318,8 @@ loadData();
     <div class="flex h-full flex-col gap-3">
       <Card>
         <div class="flex flex-wrap items-center gap-2">
-          <Input v-model:value="keywordInput" class="w-[300px]" placeholder="流程名称" @press-enter="handleSearch" />
+          <Input v-model:value="keywordInput" :style="{ width: '320px' }" placeholder="流程名称"
+            @press-enter="handleSearch" />
           <Button type="primary" @click="handleSearch">搜索</Button>
           <Button @click="handleReset">重置</Button>
           <Button :loading="loading" @click="loadData">刷新</Button>
