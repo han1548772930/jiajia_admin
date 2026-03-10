@@ -2,19 +2,22 @@
 .SYNOPSIS
     Sync vue-vben-admin upstream code
 .DESCRIPTION
-    WebClient/admin/ is a standalone Git repo cloned from vue-vben-admin.
-    origin -> https://github.com/vbenjs/vue-vben-admin.git
-
-    Strategy:
-      - sparse-checkout to ignore unneeded upstream modules (never pulled)
-      - apps/web-antdv-next conflicts resolved as ours (keep local)
-      - Framework core (packages, internal, etc.) merged normally
+    Strategy (no sparse-checkout, safe):
+      1. git fetch + git merge --no-commit
+      2. Remove unneeded upstream modules (web-antd, web-ele, etc.)
+      3. Restore apps/web-antdv-next to local version (keep all our code)
+      4. Framework core (packages, internal, etc.) merged normally
+      5. Show remaining conflicts for manual resolution
 .PARAMETER Branch
     Upstream branch or tag, default main
 .PARAMETER DryRun
     Preview only, no actual changes
 .PARAMETER SkipBackup
     Skip creating backup branch
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\scripts\sync-upstream.ps1
+    powershell -ExecutionPolicy Bypass -File .\scripts\sync-upstream.ps1 -Branch "v5.7.0"
+    powershell -ExecutionPolicy Bypass -File .\scripts\sync-upstream.ps1 -DryRun
 #>
 param(
     [string]$Branch = "main",
@@ -26,12 +29,13 @@ $ErrorActionPreference = "Stop"
 # ======================== Config ========================
 $GIT_ROOT = git rev-parse --show-toplevel 2>$null
 if (-not $GIT_ROOT) {
-    Write-Host "[ERR] Please run in WebClient/admin Git repo" -Fore Red
+    Write-Host "[ERR] Not in a git repo" -ForegroundColor Red
     exit 1
 }
 Set-Location $GIT_ROOT
 
-$SPARSE_EXCLUDE = @(
+# Upstream dirs to DELETE after merge (not used in your project)
+$REMOVE_DIRS = @(
     "apps/web-antd",
     "apps/web-ele",
     "apps/web-naive",
@@ -39,16 +43,10 @@ $SPARSE_EXCLUDE = @(
     "playground"
 )
 
-$KEEP_OURS = @(
+# Local dirs to KEEP as-is (restore to pre-merge state after merge)
+$KEEP_LOCAL = @(
     "apps/web-antdv-next"
 )
-
-# ======================== Utils ========================
-function Write-Step {
-    param([string]$Num, [string]$Msg)
-    Write-Host ""
-    Write-Host "--- Step $Num $Msg ---" -ForegroundColor Cyan
-}
 
 # ======================== Main ========================
 Write-Host ""
@@ -68,8 +66,9 @@ if ($DryRun) {
     Write-Host "  Mode:    [SYNC]" -ForegroundColor Green
 }
 
-# ---- Step 1 ----
-Write-Step -Num "1/6" -Msg "Check workspace"
+# ---- Step 1: Check workspace ----
+Write-Host ""
+Write-Host "--- Step 1/5: Check workspace ---" -ForegroundColor Cyan
 $dirty = git status --porcelain
 if ($dirty) {
     Write-Host "  [WARN] Uncommitted changes:" -ForegroundColor Yellow
@@ -85,129 +84,99 @@ if ($dirty) {
 
 if ($DryRun) {
     Write-Host ""
-    Write-Host "  [PREVIEW] Will execute:" -ForegroundColor Yellow
-    Write-Host "    1. sparse-checkout exclude: $($SPARSE_EXCLUDE -join ', ')"
-    Write-Host "    2. git fetch origin $Branch"
-    Write-Host "    3. Create backup branch"
-    Write-Host "    4. git merge --no-commit origin/$Branch"
-    Write-Host "    5. apps/web-antdv-next conflicts keep ours"
-    Write-Host "    6. Manually resolve remaining conflicts"
+    Write-Host "  [PREVIEW] Steps that will execute:" -ForegroundColor Yellow
+    Write-Host "    1. git fetch origin $Branch"
+    Write-Host "    2. Create backup branch"
+    Write-Host "    3. git merge --no-commit origin/$Branch"
+    Write-Host "    4. Remove: $($REMOVE_DIRS -join ', ')"
+    Write-Host "    5. Restore local: $($KEEP_LOCAL -join ', ')"
+    Write-Host "    6. Commit merge"
     Write-Host ""
     Write-Host "  Run without -DryRun to execute" -ForegroundColor Yellow
     exit 0
 }
 
-# ---- Step 2 ----
-Write-Step -Num "2/6" -Msg "Configure sparse-checkout (ignore unneeded modules)"
-git sparse-checkout init 2>$null
-git config core.sparseCheckoutCone false
-$sparseFile = Join-Path $GIT_ROOT ".git" "info" "sparse-checkout"
-$sparseLines = @("/*")
-foreach ($exc in $SPARSE_EXCLUDE) {
-    $sparseLines += "!/$exc/"
+# ---- Step 2: Fetch ----
+Write-Host ""
+Write-Host "--- Step 2/5: Fetch upstream ---" -ForegroundColor Cyan
+git fetch origin $Branch
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  [ERR] Fetch failed" -ForegroundColor Red
+    exit 1
 }
-$sparseLines | Set-Content -Path $sparseFile -Encoding UTF8
-git read-tree -mu HEAD 2>$null
-Write-Host "  [OK] Excluded: $($SPARSE_EXCLUDE -join ', ')" -ForegroundColor Green
-
-# ---- Step 3 ----
-Write-Step -Num "3/6" -Msg "Fetch upstream"
-git fetch origin $Branch 2>&1 | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
 $upPkgJson = git show "origin/${Branch}:package.json" 2>$null
 if ($upPkgJson) {
     $upPkg = $upPkgJson | ConvertFrom-Json
-    Write-Host "  [OK] Upstream version: v$($upPkg.version)" -ForegroundColor Green
+    Write-Host "  [OK] Upstream: v$($upPkg.version)  Local: v$($pkg.version)" -ForegroundColor Green
 } else {
     Write-Host "  [ERR] Cannot read upstream version" -ForegroundColor Red
     exit 1
 }
 
-# ---- Step 4 ----
-Write-Step -Num "4/6" -Msg "Create backup branch"
+# ---- Step 3: Backup + Merge ----
+Write-Host ""
+Write-Host "--- Step 3/5: Backup and merge ---" -ForegroundColor Cyan
+
 $bak = ""
 if (-not $SkipBackup) {
     $bak = "backup/vben-sync-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-    git branch $bak 2>$null
-    Write-Host "  [OK] Backup: $bak" -ForegroundColor Green
-} else {
-    Write-Host "  [SKIP] Backup skipped" -ForegroundColor Yellow
+    git branch $bak
+    Write-Host "  [OK] Backup branch: $bak" -ForegroundColor Green
 }
 
-# ---- Step 5 ----
-Write-Step -Num "5/6" -Msg "Merge upstream (apps/web-antdv-next keep ours)"
-
-# Register ours merge driver
-git config merge.ours.driver "true"
-
-# Setup .gitattributes for ours merge
-$attrFile = Join-Path $GIT_ROOT ".gitattributes"
-$marker = "# --- sync-upstream-ours ---"
-$attrBlock = @($marker)
-foreach ($p in $KEEP_OURS) {
-    $attrBlock += "$p/** merge=ours"
-}
-$attrBlock += "# --- end-sync-upstream ---"
-
-$existingAttr = ""
-if (Test-Path $attrFile) {
-    $existingAttr = Get-Content $attrFile -Raw -ErrorAction SilentlyContinue
-}
-if (-not $existingAttr -or $existingAttr.IndexOf($marker) -lt 0) {
-    $nl = [Environment]::NewLine
-    $blockText = $nl + ($attrBlock -join $nl) + $nl
-    Add-Content -Path $attrFile -Value $blockText
-}
-
-# Merge
-Write-Host "  Running: git merge --no-commit origin/$Branch ..." -ForegroundColor Gray
-$mergeOut = git merge --no-commit "origin/$Branch" 2>&1
+Write-Host "  Merging origin/$Branch (--no-commit) ..." -ForegroundColor Gray
+git merge --no-commit "origin/$Branch" 2>&1 | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
 $mergeCode = $LASTEXITCODE
-$mergeOut | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
 
-if ($mergeCode -ne 0) {
-    Write-Host "  [INFO] Conflicts detected, resolving KEEP_OURS paths..." -ForegroundColor Yellow
-    foreach ($kp in $KEEP_OURS) {
-        $kpFull = Join-Path $GIT_ROOT $kp
-        if (Test-Path $kpFull) {
-            git checkout --ours -- $kp 2>$null
-            git add -- $kp 2>$null
-            Write-Host "  [OK] $kp -> keep ours" -ForegroundColor Green
-        }
-    }
+# ---- Step 4: Clean up unwanted dirs + restore local ----
+Write-Host ""
+Write-Host "--- Step 4/5: Remove unwanted dirs, restore local code ---" -ForegroundColor Cyan
 
-    $remaining = git diff --name-only --diff-filter=U 2>$null
-    if ($remaining) {
-        Write-Host ""
-        Write-Host "  [WARN] These files still have conflicts:" -ForegroundColor Yellow
-        $remaining | ForEach-Object { Write-Host "    $_" -ForegroundColor Yellow }
-        Write-Host ""
-        Write-Host "  After resolving manually:" -ForegroundColor White
-        Write-Host "    git add ." -ForegroundColor White
-        Write-Host "    git commit" -ForegroundColor White
-    } else {
-        Write-Host "  [OK] All conflicts auto-resolved" -ForegroundColor Green
-        git commit -m "chore: sync upstream vben-admin v$($upPkg.version)" 2>$null
-        Write-Host "  [OK] Merge committed" -ForegroundColor Green
+# Remove dirs that our project doesn't use
+foreach ($dir in $REMOVE_DIRS) {
+    if (Test-Path (Join-Path $GIT_ROOT $dir)) {
+        git rm -rf --quiet -- $dir 2>$null
+        Write-Host "  [DEL] $dir" -ForegroundColor Yellow
     }
-} else {
-    git commit -m "chore: sync upstream vben-admin v$($upPkg.version)" 2>$null
-    Write-Host "  [OK] Merge success, no conflicts" -ForegroundColor Green
 }
 
-# Restore .gitattributes
-git checkout -- .gitattributes 2>$null
+# Restore local dirs to pre-merge state (keep ALL our code)
+foreach ($local in $KEEP_LOCAL) {
+    git checkout HEAD -- $local 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        git add -- $local 2>$null
+        Write-Host "  [KEEP] $local -> restored to local version" -ForegroundColor Green
+    } else {
+        Write-Host "  [WARN] Could not restore $local, may need manual resolve" -ForegroundColor Yellow
+    }
+}
 
-# ---- Step 6 ----
-Write-Step -Num "6/6" -Msg "Done"
+# ---- Step 5: Check conflicts and commit ----
+Write-Host ""
+Write-Host "--- Step 5/5: Finalize ---" -ForegroundColor Cyan
+
+$remaining = git diff --name-only --diff-filter=U 2>$null
+if ($remaining) {
+    Write-Host "  [WARN] Remaining conflicts (manual resolve needed):" -ForegroundColor Yellow
+    $remaining | ForEach-Object { Write-Host "    $_" -ForegroundColor Yellow }
+    Write-Host ""
+    Write-Host "  After resolving:" -ForegroundColor White
+    Write-Host "    git add ." -ForegroundColor White
+    Write-Host "    git commit" -ForegroundColor White
+} else {
+    $commitMsg = "chore: sync upstream vben-admin v$($upPkg.version)"
+    git commit -m $commitMsg 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  [OK] Committed: $commitMsg" -ForegroundColor Green
+    } else {
+        Write-Host "  [INFO] Nothing to commit (already up to date?)" -ForegroundColor Gray
+    }
+}
+
+# Summary
+Write-Host ""
 $newPkg = Get-Content (Join-Path $GIT_ROOT "package.json") -Raw | ConvertFrom-Json
 Write-Host "  Version: v$($pkg.version) -> v$($newPkg.version)" -ForegroundColor White
-Write-Host ""
-$stats = git diff --stat "HEAD~1..HEAD" 2>$null
-if ($stats) {
-    Write-Host "  Changes:" -ForegroundColor White
-    $stats | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
-}
-Write-Host ""
 Write-Host "  [TIP] Run: pnpm install" -ForegroundColor Yellow
 if ($bak) {
     Write-Host "  [TIP] Rollback: git reset --hard $bak" -ForegroundColor Yellow
