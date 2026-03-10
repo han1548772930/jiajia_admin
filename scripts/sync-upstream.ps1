@@ -42,7 +42,8 @@ $IGNORE_PATHS = @(
     "apps/web-naive",
     "apps/web-tdesign",
     "playground",
-    "apps/web-antdv-next"
+    "apps/web-antdv-next",
+    "pnpm-lock.yaml"
 )
 
 # ======================== Main ========================
