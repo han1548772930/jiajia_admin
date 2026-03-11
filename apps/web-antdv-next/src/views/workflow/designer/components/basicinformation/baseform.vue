@@ -1,5 +1,5 @@
 ﻿<template>
-  <div>
+  <div class="p-2">
     <Form ref="formRef" :model="props.formState" name="basic" :label-col="{ span: 8 }" :wrapper-col="{ span: 8 }"
       class="mt-5" autocomplete="off" :validate-trigger="[]">
       <FormItem label="流程分类" name="type" :rules="[{ required: true, message: '请选择流程分类' }]">

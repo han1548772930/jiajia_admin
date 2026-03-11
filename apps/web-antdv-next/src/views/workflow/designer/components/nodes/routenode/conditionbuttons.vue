@@ -1,7 +1,8 @@
 <template>
-  <div class="mini-bar absolute -right-1 -top-1 flex text-[11px] opacity-70">
-    <Tooltip placement="topRight" :title="'复制条件'" arrow>
-      <Button type="text" size="small" shape="circle" @click.stop="handleClone">
+  <div class="mini-bar absolute -right-1 -top-1 items-center text-[11px] opacity-70">
+    <Tooltip placement="topRight" :title="'复制条件'" :open="tooltipOpen" arrow>
+      <Button type="text" size="small" shape="circle" @click.stop="handleClone" @mouseenter="tooltipOpen = true"
+        @mouseleave="tooltipOpen = false">
         <template #icon>
           <IconifyIcon icon="lucide:copy" />
         </template>
@@ -16,6 +17,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+
 import { IconifyIcon } from '@vben/icons';
 import { Button, Tooltip } from 'antdv-next';
 
@@ -28,6 +31,7 @@ const props = defineProps<{
 }>();
 
 const nodeStore = useNodeStore();
+const tooltipOpen = ref(false);
 
 const handleClose = () => {
   if (props.node.id) {
@@ -36,6 +40,7 @@ const handleClose = () => {
 };
 
 const handleClone = () => {
+  tooltipOpen.value = false;
   if (props.node.id) {
     nodeStore.cloneCondition(props.parent, props.node);
   }

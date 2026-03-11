@@ -1,20 +1,17 @@
 <template>
   <div
     class="relative inline-flex flex-col items-center select-none bg-[rgb(250,250,250)] before:absolute before:inset-0 before:z-0 before:m-auto before:h-full before:w-[2px] before:bg-[#cacaca] before:content-['']"
-    draggable="false"
-  >
+    draggable="false">
     <div class="condition-node inline-flex min-h-[220px] grow select-none flex-col" draggable="false">
-      <div class="condition-node-box relative inline-flex grow select-none flex-col items-center justify-center pt-[30px] pr-[50px] pl-[50px]" draggable="false">
+      <div
+        class="condition-node-box relative inline-flex grow select-none flex-col items-center justify-center pt-[30px] pr-[50px] pl-[50px]"
+        draggable="false">
         <div
-          class="relative w-[220px] min-h-[72px] cursor-pointer select-none rounded border-0 bg-white px-4 py-2 after:pointer-events-none after:absolute after:inset-0 after:z-[2] after:rounded after:border after:border-transparent after:shadow-[0_2px_5px_0_rgba(0,0,0,0.1)] after:transition-all after:duration-100 after:[transition-timing-function:cubic-bezier(0.645,0.045,0.355,1)] after:content-[''] [&.active:after]:border-[#3296fa] [&.active:after]:shadow-[0_0_6px_0_rgba(50,150,250,0.3)] [&_.mini-bar]:hidden [&_.priority]:flex hover:[&_.sort-handler]:flex hover:[&_.sort-handler]:items-center hover:[&_.mini-bar]:flex hover:[&_.priority]:hidden hover:after:border-[#3296fa] hover:after:shadow-[0_0_6px_0_rgba(50,150,250,0.3)]"
-          draggable="false"
-          @click="handleClick"
-        >
-          <div
-            v-if="index !== 0"
+          class="condition-box relative w-[220px] min-h-[72px] cursor-pointer select-none rounded border-0 bg-white px-4 py-2 after:pointer-events-none after:absolute after:inset-0 after:z-[2] after:rounded after:border after:border-transparent after:shadow-[0_2px_5px_0_rgba(0,0,0,0.1)] after:transition-all after:duration-100 after:[transition-timing-function:cubic-bezier(0.645,0.045,0.355,1)] after:content-[''] [&.active:after]:border-[#3296fa] [&.active:after]:shadow-[0_0_6px_0_rgba(50,150,250,0.3)] hover:after:border-[#3296fa] hover:after:shadow-[0_0_6px_0_rgba(50,150,250,0.3)]"
+          draggable="false" @click="handleClick">
+          <div v-if="index !== 0"
             class="sort-handler absolute top-0 bottom-0 left-0 z-[1] hidden h-full border-r border-solid hover:bg-white"
-            @click.stop="handleMoveLeft"
-          >
+            @click.stop="handleMoveLeft">
             &lt;
           </div>
           <ConditionNodeTitle :node="node" :parent="parent" :index="index" />
@@ -24,11 +21,9 @@
               {{ props.node.nodeContent ?? defaultConfig?.content }}
             </span>
           </div>
-          <div
-            v-if="index !== length - 1"
+          <div v-if="index !== length - 1"
             class="sort-handler absolute top-0 bottom-0 right-0 z-[1] hidden h-full border-l border-solid hover:bg-white"
-            @click.stop="handleMoveRight"
-          >
+            @click.stop="handleMoveRight">
             &gt;
           </div>
           <ErrorTip :node="node" />
@@ -80,3 +75,30 @@ const handleMoveRight = (e: MouseEvent) => {
   nodeStore.transConditionOneStepToRight(props.parent, props.index);
 };
 </script>
+
+<style scoped>
+.condition-box :deep(.mini-bar) {
+  display: none !important;
+}
+
+.condition-box :deep(.priority) {
+  display: flex !important;
+}
+
+.condition-box :deep(.sort-handler) {
+  display: none;
+}
+
+.condition-box:hover :deep(.mini-bar) {
+  display: flex !important;
+}
+
+.condition-box:hover :deep(.priority) {
+  display: none !important;
+}
+
+.condition-box:hover :deep(.sort-handler) {
+  display: flex !important;
+  align-items: center;
+}
+</style>

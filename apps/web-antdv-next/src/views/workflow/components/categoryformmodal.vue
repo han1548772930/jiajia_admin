@@ -80,11 +80,7 @@ const [Modal, modalApi] = useVbenModal({
 <template>
   <Modal :title="modalData?.mode === 'edit' ? '编辑分组' : '新增分组'" class="w-[420px]">
     <Form ref="formRef" :model="formState" layout="vertical" :validate-trigger="[]">
-      <FormItem
-        label="分组名称"
-        name="name"
-        :rules="[{ required: true, message: '请输入分组名称' }]"
-      >
+      <FormItem label="分组名称" name="name" :rules="[{ required: true, message: '请输入分组名称' }]">
         <Input v-model:value="formState.name" :maxlength="60" />
       </FormItem>
       <FormItem label="备注" name="remark">

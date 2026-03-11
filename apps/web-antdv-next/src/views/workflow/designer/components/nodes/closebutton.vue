@@ -1,11 +1,6 @@
 <template>
-  <Button
-    class="close absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center justify-center text-sm"
-    type="text"
-    size="small"
-    shape="circle"
-    @click="handleClose"
-  >
+  <Button class="close absolute right-2.5 top-1/2 -translate-y-1/2 items-center justify-center text-sm" type="text"
+    size="small" shape="circle" @click="handleClose">
     <IconifyIcon icon="lucide:x" class="text-white" />
   </Button>
 </template>
