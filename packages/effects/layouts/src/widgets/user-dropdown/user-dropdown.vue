@@ -153,17 +153,24 @@ function handleSubmitLogout() {
 
 if (enableShortcutKey.value) {
   const keys = useMagicKeys();
-  whenever(keys['Alt+KeyQ']!, () => {
-    if (enableLogoutShortcutKey.value) {
-      handleLogout();
-    }
-  });
+  const logoutKey = keys['Alt+KeyQ'];
+  const lockKey = keys['Alt+KeyL'];
 
-  whenever(keys['Alt+KeyL']!, () => {
-    if (enableLockScreenShortcutKey.value) {
-      handleOpenLock();
-    }
-  });
+  if (logoutKey) {
+    whenever(logoutKey, () => {
+      if (enableLogoutShortcutKey.value) {
+        handleLogout();
+      }
+    });
+  }
+
+  if (lockKey) {
+    whenever(lockKey, () => {
+      if (enableLockScreenShortcutKey.value) {
+        handleOpenLock();
+      }
+    });
+  }
 }
 </script>
 
@@ -196,7 +203,7 @@ if (enableShortcutKey.value) {
         </div>
       </div>
     </DropdownMenuTrigger>
-    <DropdownMenuContent class="mr-2 min-w-[240px] p-0 pb-1">
+    <DropdownMenuContent class="mr-2 min-w-60 p-0 pb-1">
       <div ref="refContent">
         <DropdownMenuLabel class="flex items-center p-3">
           <VbenAvatar
