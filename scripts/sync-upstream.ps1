@@ -160,7 +160,7 @@ if ($remaining) {
     Write-Host "    git add ." -ForegroundColor White
     Write-Host "    git commit" -ForegroundColor White
 } else {
-    $commitMsg = "chore: sync upstream vben-admin v$($upPkg.version)"
+    $commitMsg = "chore(@vben/web-antdv-next): sync upstream vben-admin v$($upPkg.version)"
     git commit -m $commitMsg 2>$null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  [OK] Committed: $commitMsg" -ForegroundColor Green
