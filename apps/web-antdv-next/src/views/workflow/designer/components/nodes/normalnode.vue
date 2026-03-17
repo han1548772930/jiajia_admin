@@ -34,13 +34,14 @@ const handleClick = () => {
     class="relative flex grow flex-col flex-wrap items-center justify-start px-[50px] select-none before:absolute before:-top-3 before:left-1/2 before:h-1 before:w-0 before:-translate-x-1/2 before:border-solid before:bg-[#f5f5f7] before:content-[''] before:[border-width:8px_6px_4px] before:[border-color:#cacaca_transparent_transparent]"
   >
     <div
-      class="node-wrap-box relative inline-flex w-[220px] min-h-[72px] shrink-0 cursor-pointer select-none flex-col rounded bg-white hover:outline hover:outline-1 hover:outline-[#1677ff] after:pointer-events-none after:absolute after:inset-0 after:z-[2] after:rounded after:border after:border-transparent after:shadow-[0_2px_5px_0_rgba(0,0,0,0.1)] after:transition-all after:duration-100 after:[transition-timing-function:cubic-bezier(0.645,0.045,0.355,1)] after:content-['']"
+      class="node-wrap-box relative inline-flex w-[220px] min-h-[72px] shrink-0 cursor-pointer select-none flex-col rounded bg-white hover:outline hover:outline-[#1677ff] after:pointer-events-none after:absolute after:inset-0 after:z-[2] after:rounded after:border after:border-transparent after:shadow-[0_2px_5px_0_rgba(0,0,0,0.1)] after:transition-all after:duration-100 after:[transition-timing-function:cubic-bezier(0.645,0.045,0.355,1)] after:content-['']"
       @click="handleClick"
     >
       <NodeTitle :node="node" :material="material" />
       <div class="relative select-none pt-4 pr-[30px] pb-4 pl-4 text-sm">
         <span
-          class="overflow-hidden text-ellipsis whitespace-nowrap select-none [display:-webkit-box] [-webkit-line-clamp:3] [-webkit-box-orient:vertical]" :class="[
+          class="overflow-hidden text-ellipsis whitespace-nowrap select-none [display:-webkit-box] [-webkit-line-clamp:3] [-webkit-box-orient:vertical]"
+          :class="[
             defaultConfig?.secondary
               ? 'text-[rgba(0,0,0,0.65)] opacity-80'
               : '',
