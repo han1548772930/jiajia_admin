@@ -27,7 +27,15 @@ import { Page, useVbenModal } from '@vben/common-ui';
 
 import { AG_GRID_LOCALE_CN } from '@ag-grid-community/locale';
 import { AgGridVue } from 'ag-grid-vue3';
-import { Button, Dropdown, Input, Modal, message, Select, Tree } from 'antdv-next';
+import {
+  Button,
+  Dropdown,
+  Input,
+  message,
+  Modal,
+  Select,
+  Tree,
+} from 'antdv-next';
 import dayjs from 'dayjs';
 
 import {
@@ -173,9 +181,9 @@ const treeDataForTree = computed<TreeDataNode[]>(() => {
   const mapNode = (node: GroupNode): TreeDataNode => ({
     ...node,
     key: node.Sysid,
-    children: node.children?.map(mapNode),
+    children: node.children?.map((child) => mapNode(child)),
   });
-  return treeData.value.map(mapNode);
+  return treeData.value.map((node) => mapNode(node));
 });
 
 // 获取数据
@@ -229,13 +237,9 @@ const onTreeDrop = async (info: TreeDropInfo) => {
   if (treeDrooping.value) return;
   const dragId = info.dragNode.key as number;
   const dropId = info.node.key as number;
-  let newParentId = 0;
-  if (info.dropToGap) {
-    const parent = findGroupParent(treeData.value, dropId);
-    newParentId = parent ? parent.Sysid : 0;
-  } else {
-    newParentId = dropId;
-  }
+  const newParentId = info.dropToGap
+    ? (findGroupParent(treeData.value, dropId)?.Sysid ?? 0)
+    : dropId;
   const dragNode = findGroupNode(treeData.value, dragId);
   if (!dragNode || (dragNode.ParentId ?? 0) === newParentId) return;
   treeDrooping.value = true;
@@ -462,17 +466,39 @@ onMounted(fetchData);
   <Page auto-content-height content-class="flex h-full p-2">
     <div class="flex h-full w-full">
       <!-- 左侧树 -->
-      <div class="flex h-full w-60 shrink-0 flex-col overflow-hidden border-r border-border">
-        <div class="flex-1 overflow-y-auto p-2" @contextmenu.prevent="onTreeContainerRightClick">
-          <Tree v-model:expanded-keys="expandedKeys" v-model:selected-keys="selectedKeys" :tree-data="treeDataForTree"
-            :field-names="{ title: 'Name', key: 'Sysid', children: 'children' }" block-node show-line draggable
-            @drop="onTreeDrop" @select="onTreeSelect" @right-click="onTreeRightClick">
+      <div
+        class="flex h-full w-60 shrink-0 flex-col overflow-hidden border-r border-border"
+      >
+        <div
+          class="flex-1 overflow-y-auto p-2"
+          @contextmenu.prevent="onTreeContainerRightClick"
+        >
+          <Tree
+            v-model:expanded-keys="expandedKeys"
+            v-model:selected-keys="selectedKeys"
+            :tree-data="treeDataForTree"
+            :field-names="{ title: 'Name', key: 'Sysid', children: 'children' }"
+            block-node
+            show-line
+            draggable
+            @drop="onTreeDrop"
+            @select="onTreeSelect"
+            @right-click="onTreeRightClick"
+          >
             <template #titleRender="{ Name, _jobCount, Sysid }">
               <div v-if="renamingNodeId === Sysid" @click.stop @mousedown.stop>
-                <Input v-model:value="renamingName" class="w-[120px]" @press-enter="onRenameConfirm"
-                  @blur="onRenameConfirm" @keydown.esc="onRenameCancel" />
+                <Input
+                  v-model:value="renamingName"
+                  class="w-[120px]"
+                  @press-enter="onRenameConfirm"
+                  @blur="onRenameConfirm"
+                  @keydown.esc="onRenameCancel"
+                />
               </div>
-              <span v-else class="inline-flex h-6 items-center gap-1 leading-none">
+              <span
+                v-else
+                class="inline-flex h-6 items-center gap-1 leading-none"
+              >
                 <span class="leading-none">{{ Name }} ({{ _jobCount }})</span>
               </span>
             </template>
@@ -483,10 +509,19 @@ onMounted(fetchData);
       <!-- 右侧内容 -->
       <div class="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
         <!-- 工具栏 -->
-        <div class="flex shrink-0 items-center gap-2 border-b border-border p-2">
+        <div
+          class="flex shrink-0 items-center gap-2 border-b border-border p-2"
+        >
           <span class="text-sm text-muted-foreground">任务名称</span>
-          <Select v-model:value="jobNameFilter" :options="jobOptions" show-search option-filter-prop="label" allow-clear
-            placeholder="选择或搜索任务" class="w-[200px]" />
+          <Select
+            v-model:value="jobNameFilter"
+            :options="jobOptions"
+            show-search
+            option-filter-prop="label"
+            allow-clear
+            placeholder="选择或搜索任务"
+            class="w-[200px]"
+          />
           <Button @click="onReset">重置</Button>
           <Button type="primary" :loading="refreshing" @click="onRefresh">
             刷新
@@ -495,26 +530,44 @@ onMounted(fetchData);
 
         <!-- AG Grid 表格 -->
         <div class="min-h-0 flex-1 p-2">
-          <AgGridVue class="h-full w-full" :theme="currentAgGridTheme" :column-defs="columnDefs"
-            :default-col-def="defaultColDef" :locale-text="AG_GRID_LOCALE_CN" :get-row-id="getRowId" :header-height="35"
-            :row-data="displayJobs" :loading="loading" v-bind="gridOptions" @grid-ready="onGridReady" />
+          <AgGridVue
+            class="h-full w-full"
+            :theme="currentAgGridTheme"
+            :column-defs="columnDefs"
+            :default-col-def="defaultColDef"
+            :locale-text="AG_GRID_LOCALE_CN"
+            :get-row-id="getRowId"
+            :header-height="35"
+            :row-data="displayJobs"
+            :loading="loading"
+            v-bind="gridOptions"
+            @grid-ready="onGridReady"
+          />
         </div>
       </div>
     </div>
 
     <!-- 右键菜单 -->
-    <Dropdown :open="contextMenuVisible" :trigger="[]" :menu="{
-      items: activeContextMenuItems,
-      onClick: onContextMenuClick,
-    }" @open-change="
+    <Dropdown
+      :open="contextMenuVisible"
+      :trigger="[]"
+      :menu="{
+        items: activeContextMenuItems,
+        onClick: onContextMenuClick,
+      }"
+      @open-change="
         (v: boolean) => {
           contextMenuVisible = v;
         }
-      ">
-      <div class="pointer-events-none fixed h-px w-px" :style="{
-        left: `${contextMenuPos.x}px`,
-        top: `${contextMenuPos.y}px`,
-      }"></div>
+      "
+    >
+      <div
+        class="pointer-events-none fixed h-px w-px"
+        :style="{
+          left: `${contextMenuPos.x}px`,
+          top: `${contextMenuPos.y}px`,
+        }"
+      ></div>
     </Dropdown>
 
     <!-- 分组弹窗 -->
