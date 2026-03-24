@@ -1,14 +1,3 @@
-<template>
-  <div class="grid grid-cols-[auto,1fr] items-center gap-x-3">
-    <Radio class="min-h-8 flex items-center text-sm text-foreground" :checked="checked" @change="onSelect">
-      {{ label }}
-    </Radio>
-    <div class="min-h-8 flex items-center gap-2 text-sm text-foreground">
-      <slot />
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { Radio } from 'antdv-next';
 
@@ -25,3 +14,22 @@ const onSelect = () => {
   emit('select');
 };
 </script>
+
+<template>
+  <div class="flex items-center gap-3">
+    <div class="flex h-8 w-28 shrink-0 items-center">
+      <Radio
+        class="inline-flex items-center text-sm leading-none text-foreground"
+        :checked="checked"
+        @change="onSelect"
+      >
+        {{ label }}
+      </Radio>
+    </div>
+    <div
+      class="flex min-h-8 flex-1 flex-wrap items-center gap-2 text-sm text-foreground"
+    >
+      <slot></slot>
+    </div>
+  </div>
+</template>
