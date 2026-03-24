@@ -25,6 +25,7 @@
   },
   "type": "module",
   "scripts": {
+    "bootstrap": "pnpm install",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 turbo build",
     "build:analyze": "turbo build:analyze",
     "build:antdv-next:admin": "turbo build:antdv-next:admin --filter=@vben/web-antdv-next",
