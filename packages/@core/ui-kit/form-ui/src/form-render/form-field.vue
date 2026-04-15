@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 
-import type { FormActions, FormSchema, MaybeComponentProps } from '../types';
+import type {
+  FormActions,
+  FormFieldProps,
+  MaybeComponentProps,
+} from '../types';
 
 import { computed, nextTick, onUnmounted, useTemplateRef, watch } from 'vue';
 
@@ -26,7 +30,7 @@ import useDependencies from './dependencies';
 import FormLabel from './form-label.vue';
 import { isEventObjectLike } from './helper';
 
-interface Props extends FormSchema {}
+interface Props extends FormFieldProps {}
 
 const {
   colon,
@@ -177,15 +181,15 @@ const computedProps = computed(() => {
 
 // 自定义帮助信息
 const computedHelp = computed(() => {
-  return help ? onHelpFunc : undefined;
-});
-
-const onHelpFunc = () => {
-  if (!help) {
+  const helpContent = help;
+  if (!helpContent) {
     return undefined;
   }
-  return isFunction(help) ? help(values.value, formApi!) : help;
-};
+  return () =>
+    isFunction(helpContent)
+      ? helpContent(values.value, getFormApi())
+      : helpContent;
+});
 
 watch(
   () => computedProps.value?.autofocus,
