@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Button } from 'antdv-next';
+import type { TaskApi } from '#/api/task';
+
 import { IconifyIcon } from '@vben/icons';
 
-import type { TaskApi } from '#/api/task';
+import { Button } from 'antdv-next';
 
 defineOptions({
   name: 'TableActionButtons',
