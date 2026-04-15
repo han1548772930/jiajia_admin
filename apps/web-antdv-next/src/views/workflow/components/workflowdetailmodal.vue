@@ -4,14 +4,8 @@ import { ref } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
 import { Button, message, Tabs, TextArea } from 'antdv-next';
 
-import {
-  getApprovalNodesApi,
-  getOpHistoryApi,
-  getReportFormApi,
-  verifyInstanceApi,
-  WorkflowVerifyResult,
-  type WorkflowApi,
-} from '#/api/workflow';
+import { getApprovalNodesApi, getOpHistoryApi, getReportFormApi, verifyInstanceApi, WorkflowVerifyResult } from '#/api/workflow';
+import type { WorkflowApi } from '#/api/workflow';
 import { useRequestLoading } from '#/composables/useRequestLoading';
 import NodeFlowSteps from '#/views/workflow/components/nodeflowsteps.vue';
 import OperationHistorySteps from '#/views/workflow/components/operationhistorysteps.vue';
