@@ -1,11 +1,19 @@
 <script setup lang="ts">
+import type { WorkflowApi } from '#/api/workflow';
+
 import { ref } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
+
 import { Button, message, Tabs, TextArea } from 'antdv-next';
 
-import { getApprovalNodesApi, getOpHistoryApi, getReportFormApi, verifyInstanceApi, WorkflowVerifyResult } from '#/api/workflow';
-import type { WorkflowApi } from '#/api/workflow';
+import {
+  getApprovalNodesApi,
+  getOpHistoryApi,
+  getReportFormApi,
+  verifyInstanceApi,
+  WorkflowVerifyResult,
+} from '#/api/workflow';
 import { useRequestLoading } from '#/composables/useRequestLoading';
 import NodeFlowSteps from '#/views/workflow/components/nodeflowsteps.vue';
 import OperationHistorySteps from '#/views/workflow/components/operationhistorysteps.vue';
@@ -74,9 +82,10 @@ async function loadDetail(item: WorkflowApi.InstanceItem) {
       ]);
 
       if (formResult.status === 'fulfilled') {
-        reportForm.value = formResult.value.Success && formResult.value.Data
-          ? formResult.value.Data
-          : undefined;
+        reportForm.value =
+          formResult.value.Success && formResult.value.Data
+            ? formResult.value.Data
+            : undefined;
       } else {
         reportForm.value = undefined;
       }
@@ -125,13 +134,19 @@ async function submitAction(result: WorkflowVerifyResult) {
     modalApi.lock();
     verifyModalApi.lock();
     try {
-      const res = await verifyInstanceApi(current.item.Sysid, verifyRemark.value, result);
+      const res = await verifyInstanceApi(
+        current.item.Sysid,
+        verifyRemark.value,
+        result,
+      );
       if (!res.Success) {
         message.error(res.Message || '审批提交失败');
         return;
       }
 
-      message.success(result === WorkflowVerifyResult.Approve ? '审批通过' : '审批驳回');
+      message.success(
+        result === WorkflowVerifyResult.Approve ? '审批通过' : '审批驳回',
+      );
       if (current.onActionDone) {
         await current.onActionDone();
       }
@@ -146,28 +161,46 @@ async function submitAction(result: WorkflowVerifyResult) {
 </script>
 
 <template>
-  <Modal :title="modalData?.item?.TemplateName || '流程详情'" class="w-[92%]" :loading="detailLoading"
-    :footer="!modalData?.approvalMode" :show-cancel-button="false"
-    :show-confirm-button="false">
+  <Modal
+    :title="modalData?.item?.TemplateName || '流程详情'"
+    class="w-[92%]"
+    :loading="detailLoading"
+    :footer="!modalData?.approvalMode"
+    :show-cancel-button="false"
+    :show-confirm-button="false"
+  >
     <template #title>
       <div class="flex w-full items-center justify-between pr-14">
         <span>{{ modalData?.item?.TemplateName || '流程详情' }}</span>
-        <Button v-if="modalData?.approvalMode" type="primary" :loading="actionLoading || detailLoading"
-          @click="openVerifyModal">
+        <Button
+          v-if="modalData?.approvalMode"
+          type="primary"
+          :loading="actionLoading || detailLoading"
+          @click="openVerifyModal"
+        >
           审批
         </Button>
       </div>
     </template>
 
     <div class="flex h-full min-h-0 flex-col gap-4">
-      <Tabs v-model:activeKey="activeKey" :items="tabItems" type="card" />
-      <div v-if="activeKey === 'detail'" class="min-h-0 flex-1 overflow-y-auto pr-1">
+      <Tabs v-model:active-key="activeKey" :items="tabItems" type="card" />
+      <div
+        v-if="activeKey === 'detail'"
+        class="min-h-0 flex-1 overflow-y-auto pr-1"
+      >
         <ReportFormPanel :data="reportForm" />
       </div>
-      <div v-else-if="activeKey === 'history'" class="min-h-0 flex-1 overflow-y-auto pr-1">
+      <div
+        v-else-if="activeKey === 'history'"
+        class="min-h-0 flex-1 overflow-y-auto pr-1"
+      >
         <OperationHistorySteps :data="opHistory" />
       </div>
-      <div v-else-if="activeKey === 'flow'" class="min-h-0 flex-1 overflow-y-auto pr-1">
+      <div
+        v-else-if="activeKey === 'flow'"
+        class="min-h-0 flex-1 overflow-y-auto pr-1"
+      >
         <NodeFlowSteps :data="approvalNodes" />
       </div>
     </div>
@@ -180,14 +213,30 @@ async function submitAction(result: WorkflowVerifyResult) {
   </Modal>
 
   <VerifyModal title="审批意见" class="w-[520px]">
-    <TextArea v-model:value="verifyRemark" :rows="4" :maxlength="300" show-count placeholder="请输入审批意见（可选）" />
+    <TextArea
+      v-model:value="verifyRemark"
+      :rows="4"
+      :maxlength="300"
+      show-count
+      placeholder="请输入审批意见（可选）"
+    />
     <template #footer>
       <div class="flex w-full justify-end gap-2">
-        <Button :disabled="actionLoading" @click="verifyModalApi.close()">取消</Button>
-        <Button danger :loading="actionLoading" @click="submitAction(WorkflowVerifyResult.Reject)">
+        <Button :disabled="actionLoading" @click="verifyModalApi.close()">
+取消
+</Button>
+        <Button
+          danger
+          :loading="actionLoading"
+          @click="submitAction(WorkflowVerifyResult.Reject)"
+        >
           驳回
         </Button>
-        <Button type="primary" :loading="actionLoading" @click="submitAction(WorkflowVerifyResult.Approve)">
+        <Button
+          type="primary"
+          :loading="actionLoading"
+          @click="submitAction(WorkflowVerifyResult.Approve)"
+        >
           通过
         </Button>
       </div>
