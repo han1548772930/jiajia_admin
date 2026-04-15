@@ -223,8 +223,8 @@ async function submitAction(result: WorkflowVerifyResult) {
     <template #footer>
       <div class="flex w-full justify-end gap-2">
         <Button :disabled="actionLoading" @click="verifyModalApi.close()">
-取消
-</Button>
+          取消
+        </Button>
         <Button
           danger
           :loading="actionLoading"
