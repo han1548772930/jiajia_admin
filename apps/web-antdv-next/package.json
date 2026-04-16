@@ -59,6 +59,7 @@
     "vue-router": "catalog:"
   },
   "devDependencies": {
+    "@vitejs/plugin-legacy": "catalog:",
     "@types/crypto-js": "^4.2.2"
   }
 }
