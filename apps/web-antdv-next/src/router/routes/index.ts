@@ -21,10 +21,13 @@ const targetRouteFiles: Record<string, Record<string, unknown>> = {
 const target = import.meta.env.VITE_APP_TARGET || 'admin';
 
 /** 动态路由 = 共享路由 + 当前 target 专属路由 */
-const dynamicRoutes: RouteRecordRaw[] = mergeRouteModules({
-  ...sharedRouteFiles,
-  ...(targetRouteFiles[target] || {}),
-});
+const dynamicRoutes: RouteRecordRaw[] =
+  target === 'dashboard'
+    ? []
+    : mergeRouteModules({
+        ...sharedRouteFiles,
+        ...targetRouteFiles[target],
+      });
 
 /** 外部路由列表，访问这些页面可以不需要Layout，可能用于内嵌在别的系统(不会显示在菜单中) */
 // const externalRoutes: RouteRecordRaw[] = mergeRouteModules(externalRouteFiles);
@@ -44,5 +47,6 @@ const routes: RouteRecordRaw[] = [
 const coreRouteNames = traverseTreeValues(coreRoutes, (route) => route.name);
 
 /** 有权限校验的路由列表，包含动态路由和静态路由 */
-const accessRoutes = [...dynamicRoutes, ...staticRoutes];
+const accessRoutes =
+  target === 'dashboard' ? [] : [...dynamicRoutes, ...staticRoutes];
 export { accessRoutes, coreRouteNames, routes };

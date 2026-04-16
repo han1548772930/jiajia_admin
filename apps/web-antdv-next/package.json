@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@ag-grid-community/locale": "^35.0.1",
+    "@kjgl77/datav-vue3": "^1.7.4",
     "@vben/access": "workspace:*",
     "@vben/common-ui": "workspace:*",
     "@vben/constants": "workspace:*",
@@ -54,12 +55,12 @@
     "antdv-next": "catalog:",
     "crypto-js": "^4.2.0",
     "dayjs": "catalog:",
+    "echarts": "catalog:",
     "pinia": "catalog:",
     "vue": "catalog:",
     "vue-router": "catalog:"
   },
   "devDependencies": {
-    "@vitejs/plugin-legacy": "catalog:",
     "@types/crypto-js": "^4.2.2"
   }
 }

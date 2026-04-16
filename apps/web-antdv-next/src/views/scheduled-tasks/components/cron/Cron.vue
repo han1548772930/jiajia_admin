@@ -1,6 +1,17 @@
 <script setup lang="ts">
+import type { State, WeekItem } from './cronTypes';
+
 import { computed, reactive, ref, watch } from 'vue';
+
 import { Segmented } from 'antdv-next';
+
+import CronDayTab from './CronDayTab.vue';
+import CronExpression from './CronExpression.vue';
+import CronHourTab from './CronHourTab.vue';
+import CronMinuteTab from './CronMinuteTab.vue';
+import CronMonthTab from './CronMonthTab.vue';
+import { parseCron } from './cronParser';
+import { getInitialState } from './cronState';
 import {
   computeDaysText,
   computeHoursText,
@@ -8,14 +19,6 @@ import {
   computeMonthsText,
   computeWeeksText,
 } from './cronUtils';
-import CronMinuteTab from './CronMinuteTab.vue';
-import CronHourTab from './CronHourTab.vue';
-import CronDayTab from './CronDayTab.vue';
-import CronMonthTab from './CronMonthTab.vue';
-import CronExpression from './CronExpression.vue';
-import type { State, WeekItem } from './cronTypes';
-import { getInitialState } from './cronState';
-import { parseCron } from './cronParser';
 
 const props = defineProps<{
   cron?: string;
@@ -34,7 +37,7 @@ const weekList: WeekItem[] = [
 ];
 
 const state = reactive<State>(getInitialState());
-const activeTab = ref<'minute' | 'hour' | 'day' | 'month'>('minute');
+const activeTab = ref<'day' | 'hour' | 'minute' | 'month'>('minute');
 
 const tabOptions = [
   { label: '分钟', value: 'minute' },
@@ -51,12 +54,12 @@ const monthsText = computed(() => computeMonthsText(state));
 
 const cronExpression = computed(
   () =>
-    `${minutesText.value || '*'} ${hoursText.value || '*'} ${daysText.value || '*'} ${monthsText.value || '*'} ${weeksText.value || '*'}`
+    `${minutesText.value || '*'} ${hoursText.value || '*'} ${daysText.value || '*'} ${monthsText.value || '*'} ${weeksText.value || '*'}`,
 );
 
-const normalizeCron = (value?: string | null) => {
+const normalizeCron = (value?: null | string) => {
   const text = value?.trim();
-  return text ? text : '* * * * *';
+  return text || '* * * * *';
 };
 
 watch(
@@ -66,7 +69,7 @@ watch(
     if (nextCron === cronExpression.value) return;
     parseCron(nextCron, state);
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch(cronExpression, (nextExpression) => {
@@ -79,10 +82,14 @@ watch(cronExpression, (nextExpression) => {
   <div class="max-w-2xl flex flex-col gap-3">
     <Segmented v-model:value="activeTab" block :options="tabOptions" />
     <div>
-      <CronMinuteTab v-if="activeTab === 'minute'" :state="state" />
-      <CronHourTab v-else-if="activeTab === 'hour'" :state="state" />
-      <CronDayTab v-else-if="activeTab === 'day'" :state="state" :week-list="weekList" />
-      <CronMonthTab v-else :state="state" />
+      <CronMinuteTab v-if="activeTab === 'minute'" v-model:state="state" />
+      <CronHourTab v-else-if="activeTab === 'hour'" v-model:state="state" />
+      <CronDayTab
+        v-else-if="activeTab === 'day'"
+        v-model:state="state"
+        :week-list="weekList"
+      />
+      <CronMonthTab v-else v-model:state="state" />
     </div>
 
     <CronExpression :expression="cronExpression" />

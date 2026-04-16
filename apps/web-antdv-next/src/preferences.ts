@@ -1,10 +1,8 @@
-
 import { defineOverridesPreferences } from '@vben/preferences';
-import logo from '/static/logo.png';
 
-const target = import.meta.env.VITE_APP_TARGET;
-const isWorkflowLikeProduction =
-  import.meta.env.PROD && ['workflow', 'ocap'].includes(target);
+const target = import.meta.env.VITE_APP_TARGET || 'admin';
+const isDashboardTarget = target === 'dashboard';
+
 // const defaultHomePathMap: Record<string, string> = {
 //   ocap: '/ocap/home',
 //   workflow: '/workflow/my-process',
@@ -17,14 +15,13 @@ const isWorkflowLikeProduction =
 export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
-    name: import.meta.env.VITE_APP_TITLE,
-    // defaultHomePath: defaultHomePathMap[target] || '/analytics',
-  
+    name: '佳佳乐潮玩',
     compact: true,
-    ...(isWorkflowLikeProduction
+    defaultHomePath: isDashboardTarget ? '/' : '/admin/scheduled-tasks',
+    ...(isDashboardTarget
       ? {
+          layout: 'full-content' as const,
           enablePreferences: false,
-          layout: 'full-content',
         }
       : {}),
   },
@@ -32,10 +29,10 @@ export const overridesPreferences = defineOverridesPreferences({
     mode: 'auto',
   },
   logo: {
-    source: logo,
+    source: '',
   },
   copyright: {
-    companyName: 'NmcSoft',
+    companyName: '佳佳乐潮玩',
     enable: true,
   },
 });

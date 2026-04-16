@@ -3,10 +3,7 @@
  * admin / b2b / workflow / ocap / dashboard → 对应实现
  */
 import * as adminAuth from './admin';
-import * as b2bAuth from './b2b';
 import * as defaultAuth from './default';
-import * as ocapAuth from './ocap';
-import * as workflowAuth from './workflow';
 
 export namespace AuthApi {
   /** 登录接口参数 */
@@ -28,9 +25,7 @@ export namespace AuthApi {
 
 const authMap: Record<string, typeof defaultAuth> = {
   admin: adminAuth,
-  b2b: b2bAuth,
-  ocap: ocapAuth,
-  workflow: workflowAuth,
+  dashboard: adminAuth,
 };
 
 const target = import.meta.env.VITE_APP_TARGET || 'admin';

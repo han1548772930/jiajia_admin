@@ -15,8 +15,8 @@ import { routes } from './routes';
 const router = createRouter({
   history:
     import.meta.env.VITE_ROUTER_HISTORY === 'hash'
-      ? createWebHashHistory(import.meta.env.VITE_BASE)
-      : createWebHistory(import.meta.env.VITE_BASE),
+      ? createWebHashHistory(import.meta.env.BASE_URL)
+      : createWebHistory(import.meta.env.BASE_URL),
   // 应该添加到路由的初始路由列表。
   routes,
   scrollBehavior: (to, _from, savedPosition) => {

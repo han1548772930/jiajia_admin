@@ -17,6 +17,8 @@ import App from './app.vue';
 import { router } from './router';
 
 async function bootstrap(namespace: string) {
+  const target = import.meta.env.VITE_APP_TARGET || 'admin';
+
   // 初始化组件适配器
   await initComponentAdapter();
 
@@ -45,6 +47,15 @@ async function bootstrap(namespace: string) {
 
   // 配置 pinia-tore
   await initStores(app, { namespace });
+
+  if (target === 'dashboard') {
+    const { ensureDashboardAccessToken } = await import('./api/dashboard');
+    try {
+      await ensureDashboardAccessToken();
+    } catch (error) {
+      console.error('Dashboard auto login failed', error);
+    }
+  }
 
   // 安装权限指令
   registerAccessDirective(app);

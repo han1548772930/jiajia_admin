@@ -1,5 +1,4 @@
 import { defineConfig } from '@vben/vite-config';
-// import legacy from '@vitejs/plugin-legacy';
 import { loadEnv } from 'vite';
 
 // 产品配置映射 - 根据需要自行调整
@@ -21,20 +20,6 @@ export default defineConfig(async (config) => {
     application: {},
     vite: {
       base: cfg.base,
-      plugins: [
-        // legacy({
-        //   modernTargets: [
-        //     'edge>=105',
-        //     'firefox>=106',
-        //     'chrome>=105',
-        //     'safari>=16.4',
-        //     'chromeAndroid>=105',
-        //     'iOS>=16.4',
-        //   ],
-        //   modernPolyfills: ['es.array.to-sorted'],
-        //   renderLegacyChunks: false,
-        // }),
-      ],
       build: {
         outDir: cfg.outDir,
       },

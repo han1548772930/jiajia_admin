@@ -1,4 +1,4 @@
-﻿import type { RequestClientOptions } from '@vben/request';
+import type { RequestClientOptions } from '@vben/request';
 
 import { useAppConfig } from '@vben/hooks';
 import { preferences } from '@vben/preferences';
@@ -66,21 +66,29 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     },
   });
 
-  const legacyApiResponseConfig: Parameters<typeof defaultResponseInterceptor>[0] = {
+  const legacyApiResponseConfig: Parameters<
+    typeof defaultResponseInterceptor
+  >[0] = {
     codeField: 'Code',
     dataField: (response: any) => response,
     successCode: (code: number) => code >= 200 && code < 300,
   };
 
   // 按构建目标选择后端响应结构解析规则
-  const responseConfigMap: Record<string, Parameters<typeof defaultResponseInterceptor>[0]> = {
+  const responseConfigMap: Record<
+    string,
+    Parameters<typeof defaultResponseInterceptor>[0]
+  > = {
     admin: legacyApiResponseConfig,
+    dashboard: legacyApiResponseConfig,
     workflow: legacyApiResponseConfig,
     // 如需扩展其他构建目标，可在这里新增
     // b2b: { codeField: 'code', dataField: 'data', successCode: 0 },
   };
 
-  const defaultResponseConfig: Parameters<typeof defaultResponseInterceptor>[0] = {
+  const defaultResponseConfig: Parameters<
+    typeof defaultResponseInterceptor
+  >[0] = {
     codeField: 'code',
     dataField: 'data',
     successCode: 0,
@@ -90,7 +98,9 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   const target = import.meta.env.VITE_APP_TARGET || 'admin';
   // 响应拦截：处理 token 过期与自动刷新
   client.addResponseInterceptor(
-    defaultResponseInterceptor(responseConfigMap[target] ?? defaultResponseConfig),
+    defaultResponseInterceptor(
+      responseConfigMap[target] ?? defaultResponseConfig,
+    ),
   );
 
   // 响应拦截：统一错误提示
