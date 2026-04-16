@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Button } from 'antdv-next';
 import { IconifyIcon } from '@vben/icons';
+
+import { Button } from 'antdv-next';
 
 defineOptions({
   name: 'TableActionButtons',
@@ -11,7 +12,9 @@ defineProps<{
 </script>
 
 <template>
-  <div class="w-full h-full p-2 flex justify-start items-center flex-wrap gap-1">
+  <div
+    class="w-full h-full p-2 flex justify-start items-center flex-wrap gap-1"
+  >
     <Button type="link" @click="params.onTableEdit(params.data)">
       <template #icon><IconifyIcon icon="lucide:edit" /></template>
       编辑
