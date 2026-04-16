@@ -38,6 +38,10 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "build:antdv-next:dashboard": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
     "build:analyze": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
