@@ -32,7 +32,7 @@
     "#/*": "./src/*"
   },
   "dependencies": {
-    "@ag-grid-community/locale": "^35.0.1",
+    "@ag-grid-community/locale": "^35.2.1",
     "@kjgl77/datav-vue3": "^1.7.4",
     "@vben/access": "workspace:*",
     "@vben/common-ui": "workspace:*",
@@ -49,9 +49,9 @@
     "@vben/types": "workspace:*",
     "@vben/utils": "workspace:*",
     "@vueuse/core": "catalog:",
-    "ag-grid-community": "^35.0.1",
-    "ag-grid-enterprise": "^35.0.1",
-    "ag-grid-vue3": "^35.0.1",
+    "ag-grid-community": "^35.2.1",
+    "ag-grid-enterprise": "^35.2.1",
+    "ag-grid-vue3": "^35.2.1",
     "antdv-next": "catalog:",
     "crypto-js": "^4.2.0",
     "dayjs": "catalog:",
